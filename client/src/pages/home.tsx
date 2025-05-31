@@ -74,15 +74,6 @@ export default function Home() {
             </div>
             
             <div className="flex flex-col sm:flex-row gap-4">
-              {(user?.role === "home_cook" || user?.role === "admin") && (
-                <Link href="/create-recipe">
-                  <Button className="bg-vegan-accent text-white px-6 py-3 hover:bg-orange-400">
-                    <Plus className="w-5 h-5 mr-2" />
-                    Share Recipe
-                  </Button>
-                </Link>
-              )}
-              
               {user?.role === "registered" && (
                 <Button 
                   className="bg-white text-vegan-primary px-6 py-3 hover:bg-gray-100"

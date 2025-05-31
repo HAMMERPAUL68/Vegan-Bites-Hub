@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Plus, User, Settings } from "lucide-react";
 import { Link } from "wouter";
+import heroImage from "@assets/image_1748708071714.png";
 
 export default function Home() {
   const { user, isLoading } = useAuth();
@@ -61,15 +62,23 @@ export default function Home() {
       <Header />
       
       {/* Welcome Section */}
-      <section className="bg-gradient-to-r from-vegan-primary to-vegan-secondary text-white py-12">
+      <section 
+        className="relative py-16 text-white"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${heroImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">
+            <div className="max-w-xl">
+              <h1 className="text-4xl font-bold mb-4">
                 Welcome back, {user?.firstName || "Chef"}!
               </h1>
-              <p className="text-xl opacity-90">
-                Ready to discover some amazing vegan recipes today?
+              <p className="text-xl opacity-90 leading-relaxed">
+                Ready to discover some amazing vegan recipes today? Join our community of passionate plant-based cooks sharing delicious, healthy meals.
               </p>
             </div>
             

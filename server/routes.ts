@@ -29,6 +29,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Cuisine routes
+  app.get('/api/cuisines', async (req, res) => {
+    try {
+      const cuisines = await storage.getCuisines();
+      res.json(cuisines);
+    } catch (error) {
+      console.error("Error fetching cuisines:", error);
+      res.status(500).json({ message: "Failed to fetch cuisines" });
+    }
+  });
+
   // Recipe routes
   app.get('/api/recipes', async (req, res) => {
     try {

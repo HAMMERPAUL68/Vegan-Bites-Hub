@@ -1,10 +1,13 @@
 import {
   users,
+  cuisines,
   recipes,
   reviews,
   favorites,
   type User,
   type UpsertUser,
+  type Cuisine,
+  type InsertCuisine,
   type Recipe,
   type InsertRecipe,
   type Review,
@@ -21,16 +24,22 @@ export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   
+  // Cuisine operations
+  getCuisines(): Promise<Cuisine[]>;
+  createCuisine(cuisine: InsertCuisine): Promise<Cuisine>;
+  updateCuisine(id: number, cuisine: Partial<InsertCuisine>): Promise<Cuisine | undefined>;
+  deleteCuisine(id: number): Promise<boolean>;
+  
   // Recipe operations
   getRecipes(filters?: {
     search?: string;
-    cuisine?: string;
+    cuisineId?: number;
     tags?: string[];
     authorId?: string;
     isApproved?: boolean;
     sortBy?: "newest" | "rating" | "popular";
-  }): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number })[]>;
-  getRecipe(id: number): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number }) | undefined>;
+  }): Promise<(Recipe & { author: User; cuisine?: Cuisine; avgRating: number; reviewCount: number })[]>;
+  getRecipe(id: number): Promise<(Recipe & { author: User; cuisine?: Cuisine; avgRating: number; reviewCount: number }) | undefined>;
   createRecipe(recipe: InsertRecipe, authorId: string): Promise<Recipe>;
   updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
   approveRecipe(id: number): Promise<Recipe | undefined>;
@@ -42,7 +51,7 @@ export interface IStorage {
   deleteReview(id: number): Promise<boolean>;
   
   // Favorite operations
-  getUserFavorites(userId: string): Promise<(Favorite & { recipe: Recipe & { author: User; avgRating: number; reviewCount: number } })[]>;
+  getUserFavorites(userId: string): Promise<(Favorite & { recipe: Recipe & { author: User; cuisine?: Cuisine; avgRating: number; reviewCount: number } })[]>;
   addFavorite(favorite: InsertFavorite, userId: string): Promise<Favorite>;
   removeFavorite(recipeId: number, userId: string): Promise<boolean>;
   isFavorite(recipeId: number, userId: string): Promise<boolean>;
@@ -68,6 +77,36 @@ export class DatabaseStorage implements IStorage {
       })
       .returning();
     return user;
+  }
+
+  // Cuisine operations
+  async getCuisines(): Promise<Cuisine[]> {
+    return await db.select().from(cuisines).where(eq(cuisines.isActive, true)).orderBy(asc(cuisines.name));
+  }
+
+  async createCuisine(cuisineData: InsertCuisine): Promise<Cuisine> {
+    const [cuisine] = await db
+      .insert(cuisines)
+      .values(cuisineData)
+      .returning();
+    return cuisine;
+  }
+
+  async updateCuisine(id: number, cuisineData: Partial<InsertCuisine>): Promise<Cuisine | undefined> {
+    const [cuisine] = await db
+      .update(cuisines)
+      .set({ ...cuisineData })
+      .where(eq(cuisines.id, id))
+      .returning();
+    return cuisine;
+  }
+
+  async deleteCuisine(id: number): Promise<boolean> {
+    const result = await db
+      .update(cuisines)
+      .set({ isActive: false })
+      .where(eq(cuisines.id, id));
+    return (result.rowCount ?? 0) > 0;
   }
 
   // Recipe operations

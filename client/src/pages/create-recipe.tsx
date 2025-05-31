@@ -10,7 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
 import { ArrowLeft, Plus, X, Clock, Users, ChefHat } from "lucide-react";
@@ -28,7 +28,7 @@ export default function CreateRecipe() {
     cookTime: "",
     servings: "",
     difficulty: "",
-    cuisine: "",
+    cuisineId: "",
     featuredImage: "",
     ingredients: [""],
     instructions: [""],
@@ -36,6 +36,16 @@ export default function CreateRecipe() {
   });
 
   const [newTag, setNewTag] = useState("");
+
+  // Fetch available cuisines
+  const { data: cuisines = [], isLoading: cuisinesLoading } = useQuery({
+    queryKey: ["/api/cuisines"],
+    queryFn: async () => {
+      const response = await fetch("/api/cuisines");
+      if (!response.ok) throw new Error("Failed to fetch cuisines");
+      return response.json();
+    },
+  });
 
   // Redirect if not authorized
   useEffect(() => {
@@ -298,12 +308,21 @@ export default function CreateRecipe() {
 
                 <div>
                   <Label htmlFor="cuisine">Cuisine</Label>
-                  <Input
-                    id="cuisine"
-                    value={formData.cuisine}
-                    onChange={(e) => setFormData(prev => ({ ...prev, cuisine: e.target.value }))}
-                    placeholder="e.g., Mediterranean, Asian, Mexican"
-                  />
+                  <Select 
+                    value={formData.cuisineId} 
+                    onValueChange={(value) => setFormData(prev => ({ ...prev, cuisineId: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={cuisinesLoading ? "Loading cuisines..." : "Select cuisine"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {cuisines.map((cuisine: { id: number; name: string }) => (
+                        <SelectItem key={cuisine.id} value={cuisine.id.toString()}>
+                          {cuisine.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="md:col-span-2">

@@ -180,9 +180,7 @@ export default function RecipeCard({ recipe, showFavorite = false, showActions =
             </Button>
           )}
           
-          <div className="absolute bottom-3 left-3 bg-vegan-primary text-white px-2 py-1 rounded-full text-xs font-medium">
-            {recipe.prepTime + recipe.cookTime} mins
-          </div>
+
           
           {recipe.isApproved === false && (
             <div className="absolute top-3 left-3">
@@ -216,25 +214,11 @@ export default function RecipeCard({ recipe, showFavorite = false, showActions =
             </span>
           </div>
           
-          <div className="flex items-center space-x-3 text-sm text-gray-600">
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              <span>{recipe.prepTime + recipe.cookTime}m</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="w-4 h-4 mr-1" />
-              <span>{recipe.servings}</span>
-            </div>
-          </div>
+          {/* Removed timing and servings info */}
         </div>
 
-        {(recipe.difficulty || recipe.cuisine || (recipe.tags && recipe.tags.length > 0)) && (
+        {(recipe.cuisine || (recipe.tags && recipe.tags.length > 0)) && (
           <div className="flex flex-wrap gap-1 mb-3">
-            {recipe.difficulty && (
-              <Badge variant="secondary" className="text-xs">
-                {recipe.difficulty}
-              </Badge>
-            )}
             {recipe.cuisine && (
               <Badge variant="outline" className="text-xs">
                 {recipe.cuisine}

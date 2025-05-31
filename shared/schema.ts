@@ -43,10 +43,7 @@ export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
-  prepTime: integer("prep_time").notNull(), // minutes
-  cookTime: integer("cook_time").notNull(), // minutes
-  servings: integer("servings").notNull(),
-  difficulty: varchar("difficulty").notNull(), // easy, medium, hard
+  difficulty: varchar("difficulty"), // easy, medium, hard
   cuisine: varchar("cuisine"),
   ingredients: jsonb("ingredients").notNull().$type<string[]>(),
   instructions: jsonb("instructions").notNull().$type<string[]>(),

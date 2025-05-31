@@ -1,0 +1,91 @@
+ID,Country,Meal,Recipe Title,Intro,Ingredients,Method,Helpful Notes,Image url
+1,Mexican,Breakfast,Chilaquiles with Cashew Crema,"Chilaquiles with Cashew Crema is a vibrant Mexican breakfast dish featuring crispy fried tortilla triangles simmered in flavorful green salsa. This vegan version is topped with a creamy, tangy cashew crema, making it a delicious and satisfying way to start your day.","```markdown
+# Chilaquiles with Cashew Crema
+
+**Country:** Mexico  
+**Meal Type:** Breakfast
+
+## Ingredients
+
+### For the Chilaquiles
+- 200 g corn tortillas, cut into triangles  
+- 250 ml green salsa (salsa verde)  
+- 1 tbsp vegetable oil  
+- 1 small white onion, thinly sliced  
+- 1 garlic clove, minced  
+- 100 g cooked black beans (optional)  
+- 50 g fresh cilantro, chopped  
+- 1 avocado, sliced  
+- Salt, to taste  
+
+### For the Cashew Crema
+- 100 g raw cashews, soaked in water for at least 4 hours or overnight  
+- 120 ml water  
+- 1 tbsp lime juice  
+- 1 small garlic clove  
+- 1/2 tsp salt  
+```","## Method
+
+1. **Prepare the Cashew Crema:** Drain and rinse the soaked cashews. In a blender, combine the cashews, 120 ml water, lime juice, garlic clove, and salt. Blend until smooth and creamy. Set aside.
+
+2. **Cook the Onion and Garlic:** Heat the vegetable oil in a large skillet over medium heat. Add the sliced onion and minced garlic, sautéing until softened and fragrant, about 3-4 minutes.
+
+3. **Add the Salsa:** Pour the green salsa into the skillet with the onions and garlic. Stir well and let it simmer for 5 minutes to deepen the flavors.
+
+4. **Fry the Tortilla Triangles:** In a separate pan, heat a little oil over medium-high heat. Fry the tortilla triangles in batches until they are crispy and golden, about 2-3 minutes per side. Remove and drain on paper towels.
+
+5. **Combine Tortillas and Salsa:** Add the fried tortilla triangles to the skillet with the salsa. Toss gently to coat all pieces evenly. Cook together for 2-3 minutes so the tortillas absorb some sauce but remain crisp.
+
+6. **Add Beans (Optional):** If using cooked black beans, stir them into the skillet during the last minute of cooking to warm through.
+
+7. **Serve:** Plate the chilaquiles and spoon the cashew crema over the top. Garnish with fresh cilantro and avocado slices. Add salt to taste and serve immediately.","```markdown
+# Notes for Success: Chilaquiles with Cashew Crema
+
+- **Cashew Soaking:** Soak cashews for at least 4 hours or overnight to ensure a smooth, creamy texture in the crema.
+- **Salsa Quality:** Use a fresh or good-quality green salsa (salsa verde) for vibrant flavor.
+- **Tortilla Preparation:** Fry tortilla triangles until crisp and golden to maintain texture when combined with salsa.
+- **Combining Tortillas and Salsa:** Toss gently and cook briefly to keep tortillas crispy while allowing them to absorb the sauce.
+- **Optional Beans:** Add cooked black beans for extra protein and texture.
+- **Serving:** Serve immediately after combining toppings to enjoy optimal crispness and freshness.
+- **Seasoning:** Adjust salt to taste at the end to balance flavors perfectly.
+```",s3://vegan-bites-hub/Recipe Images/1 Mexican Breakfast Chilaquiles with Cashew Crema.png
+2,Mexican,Breakfast,Vegan Huevos Rancheros with Tofu Scramble,"## Vegan Huevos Rancheros with Tofu Scramble
+
+This vibrant and hearty Mexican breakfast features a flavorful tofu scramble seasoned with traditional spices, served atop warm corn tortillas with black beans and fresh salsa. It's a delicious plant-based twist on the classic Huevos Rancheros, perfect for a nourishing start to your day.","# Vegan Huevos Rancheros with Tofu Scramble
+
+**Country:** Mexican  
+**Meal Type:** Breakfast  
+
+## Ingredients
+
+- 400 g firm tofu, drained and crumbled  
+- 2 tbsp olive oil  
+- 1 small onion, finely chopped (about 70 g)  
+- 1 clove garlic, minced  
+- 1 small red bell pepper, diced (about 100 g)  
+- 1 tsp ground cumin  
+- 1 tsp smoked paprika  
+- 1/2 tsp turmeric powder  
+- Salt and black pepper, to taste  
+- 4 small corn tortillas (about 25 cm diameter)  
+- 200 g canned black beans, drained and rinsed  
+- 150 g fresh salsa or ranchero sauce  
+- 1 avocado, sliced (about 150 g)  
+- 30 g fresh cilantro, chopped  
+- Lime wedges, for serving","## Method
+
+1. Heat 1 tablespoon of olive oil in a large non-stick skillet over medium heat. Add the chopped onion and cook for 3-4 minutes until softened.  
+2. Add the minced garlic and diced red bell pepper to the skillet and cook for another 3-4 minutes until the pepper is tender.  
+3. Stir in the crumbled tofu, ground cumin, smoked paprika, turmeric powder, salt, and black pepper. Cook for 8-10 minutes, stirring occasionally, until the tofu is heated through and slightly browned.  
+4. While the tofu scramble is cooking, warm the corn tortillas in a separate dry skillet over medium heat for about 30 seconds on each side, or until pliable and lightly toasted.  
+5. In a small pot, gently heat the black beans over low heat until warm, about 5 minutes.  
+6. To assemble, place a warm tortilla on each plate. Spoon some black beans onto each tortilla, followed by a generous portion of the tofu scramble.  
+7. Top with fresh salsa or ranchero sauce, sliced avocado, and chopped cilantro.  
+8. Serve immediately with lime wedges on the side for squeezing over the top.","# Notes for Success: Vegan Huevos Rancheros with Tofu Scramble
+
+- Use firm tofu and drain it well before crumbling to achieve a good texture for the scramble.
+- Cook the onion, garlic, and bell pepper until softened to develop flavor.
+- Toast the corn tortillas briefly to make them pliable and enhance their taste.
+- Warm the black beans gently to integrate evenly with the other ingredients.
+- Adjust seasoning with salt, pepper, and spices to taste for a well-balanced flavor.
+- Serve immediately with fresh salsa, avocado slices, cilantro, and lime wedges for the best experience.",https://vegan-bites-hub.s3.eu-north-1.amazonaws.com/Recipe+Images/10+Mexican+Lunch+Vegan+Quesadillas+with+Chipotle+Bean+Filling.png

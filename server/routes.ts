@@ -2,10 +2,18 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
+import { importRecipesFromCSV } from "./csvImport";
+import multer from "multer";
 import { insertRecipeSchema, insertReviewSchema, insertFavoriteSchema } from "@shared/schema";
 import { z } from "zod";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Set up multer for file uploads
+  const upload = multer({ 
+    storage: multer.memoryStorage(),
+    limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+  });
+
   // Auth middleware
   await setupAuth(app);
 
@@ -314,6 +322,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error updating user role:", error);
       res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  // CSV Import route (admin only)
+  app.post('/api/admin/import-csv', isAuthenticated, upload.single('csvFile'), async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // Check if user is admin
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: 'Admin access required' });
+      }
+
+      if (!req.file) {
+        return res.status(400).json({ message: 'No CSV file uploaded' });
+      }
+
+      const csvData = req.file.buffer.toString('utf-8');
+      const result = await importRecipesFromCSV(csvData, userId);
+      
+      res.json({
+        message: 'CSV import completed',
+        success: result.success,
+        errors: result.errors
+      });
+    } catch (error) {
+      console.error('Error importing CSV:', error);
+      res.status(500).json({ message: 'Failed to import CSV' });
     }
   });
 

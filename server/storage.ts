@@ -1,0 +1,281 @@
+import {
+  users,
+  recipes,
+  reviews,
+  favorites,
+  type User,
+  type UpsertUser,
+  type Recipe,
+  type InsertRecipe,
+  type Review,
+  type InsertReview,
+  type Favorite,
+  type InsertFavorite,
+} from "@shared/schema";
+import { db } from "./db";
+import { eq, desc, asc, ilike, and, sql, avg, count } from "drizzle-orm";
+
+// Interface for storage operations
+export interface IStorage {
+  // User operations (mandatory for Replit Auth)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: UpsertUser): Promise<User>;
+  
+  // Recipe operations
+  getRecipes(filters?: {
+    search?: string;
+    cuisine?: string;
+    tags?: string[];
+    authorId?: string;
+    isApproved?: boolean;
+    sortBy?: "newest" | "rating" | "popular";
+  }): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number })[]>;
+  getRecipe(id: number): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number }) | undefined>;
+  createRecipe(recipe: InsertRecipe, authorId: string): Promise<Recipe>;
+  updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined>;
+  approveRecipe(id: number): Promise<Recipe | undefined>;
+  deleteRecipe(id: number): Promise<boolean>;
+  
+  // Review operations
+  getRecipeReviews(recipeId: number): Promise<(Review & { user: User })[]>;
+  createReview(review: InsertReview, userId: string): Promise<Review>;
+  deleteReview(id: number): Promise<boolean>;
+  
+  // Favorite operations
+  getUserFavorites(userId: string): Promise<(Favorite & { recipe: Recipe & { author: User; avgRating: number; reviewCount: number } })[]>;
+  addFavorite(favorite: InsertFavorite, userId: string): Promise<Favorite>;
+  removeFavorite(recipeId: number, userId: string): Promise<boolean>;
+  isFavorite(recipeId: number, userId: string): Promise<boolean>;
+}
+
+export class DatabaseStorage implements IStorage {
+  // User operations (mandatory for Replit Auth)
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
+    return user;
+  }
+
+  // Recipe operations
+  async getRecipes(filters?: {
+    search?: string;
+    cuisine?: string;
+    tags?: string[];
+    authorId?: string;
+    isApproved?: boolean;
+    sortBy?: "newest" | "rating" | "popular";
+  }): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number })[]> {
+    let query = db
+      .select({
+        recipe: recipes,
+        author: users,
+        avgRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+        reviewCount: sql<number>`COUNT(${reviews.id})`,
+      })
+      .from(recipes)
+      .leftJoin(users, eq(recipes.authorId, users.id))
+      .leftJoin(reviews, eq(recipes.id, reviews.recipeId))
+      .groupBy(recipes.id, users.id);
+
+    const conditions = [];
+    
+    if (filters?.isApproved !== undefined) {
+      conditions.push(eq(recipes.isApproved, filters.isApproved));
+    }
+    
+    if (filters?.search) {
+      conditions.push(
+        sql`(${recipes.title} ILIKE ${`%${filters.search}%`} OR ${recipes.description} ILIKE ${`%${filters.search}%`})`
+      );
+    }
+    
+    if (filters?.cuisine) {
+      conditions.push(eq(recipes.cuisine, filters.cuisine));
+    }
+    
+    if (filters?.authorId) {
+      conditions.push(eq(recipes.authorId, filters.authorId));
+    }
+
+    if (conditions.length > 0) {
+      query = query.where(and(...conditions));
+    }
+
+    // Add sorting
+    switch (filters?.sortBy) {
+      case "rating":
+        query = query.orderBy(desc(sql`AVG(${reviews.rating})`));
+        break;
+      case "popular":
+        query = query.orderBy(desc(sql`COUNT(${reviews.id})`));
+        break;
+      case "newest":
+      default:
+        query = query.orderBy(desc(recipes.createdAt));
+        break;
+    }
+
+    const results = await query;
+    
+    return results.map(row => ({
+      ...row.recipe,
+      author: row.author!,
+      avgRating: Number(row.avgRating),
+      reviewCount: Number(row.reviewCount),
+    }));
+  }
+
+  async getRecipe(id: number): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number }) | undefined> {
+    const [result] = await db
+      .select({
+        recipe: recipes,
+        author: users,
+        avgRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+        reviewCount: sql<number>`COUNT(${reviews.id})`,
+      })
+      .from(recipes)
+      .leftJoin(users, eq(recipes.authorId, users.id))
+      .leftJoin(reviews, eq(recipes.id, reviews.recipeId))
+      .where(eq(recipes.id, id))
+      .groupBy(recipes.id, users.id);
+
+    if (!result) return undefined;
+
+    return {
+      ...result.recipe,
+      author: result.author!,
+      avgRating: Number(result.avgRating),
+      reviewCount: Number(result.reviewCount),
+    };
+  }
+
+  async createRecipe(recipe: InsertRecipe, authorId: string): Promise<Recipe> {
+    const [newRecipe] = await db
+      .insert(recipes)
+      .values({ ...recipe, authorId })
+      .returning();
+    return newRecipe;
+  }
+
+  async updateRecipe(id: number, recipe: Partial<InsertRecipe>): Promise<Recipe | undefined> {
+    const [updatedRecipe] = await db
+      .update(recipes)
+      .set({ ...recipe, updatedAt: new Date() })
+      .where(eq(recipes.id, id))
+      .returning();
+    return updatedRecipe;
+  }
+
+  async approveRecipe(id: number): Promise<Recipe | undefined> {
+    const [approvedRecipe] = await db
+      .update(recipes)
+      .set({ isApproved: true, updatedAt: new Date() })
+      .where(eq(recipes.id, id))
+      .returning();
+    return approvedRecipe;
+  }
+
+  async deleteRecipe(id: number): Promise<boolean> {
+    const result = await db.delete(recipes).where(eq(recipes.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Review operations
+  async getRecipeReviews(recipeId: number): Promise<(Review & { user: User })[]> {
+    const results = await db
+      .select({
+        review: reviews,
+        user: users,
+      })
+      .from(reviews)
+      .leftJoin(users, eq(reviews.userId, users.id))
+      .where(eq(reviews.recipeId, recipeId))
+      .orderBy(desc(reviews.createdAt));
+
+    return results.map(row => ({
+      ...row.review,
+      user: row.user!,
+    }));
+  }
+
+  async createReview(review: InsertReview, userId: string): Promise<Review> {
+    const [newReview] = await db
+      .insert(reviews)
+      .values({ ...review, userId })
+      .returning();
+    return newReview;
+  }
+
+  async deleteReview(id: number): Promise<boolean> {
+    const result = await db.delete(reviews).where(eq(reviews.id, id));
+    return result.rowCount > 0;
+  }
+
+  // Favorite operations
+  async getUserFavorites(userId: string): Promise<(Favorite & { recipe: Recipe & { author: User; avgRating: number; reviewCount: number } })[]> {
+    const results = await db
+      .select({
+        favorite: favorites,
+        recipe: recipes,
+        author: users,
+        avgRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
+        reviewCount: sql<number>`COUNT(${reviews.id})`,
+      })
+      .from(favorites)
+      .leftJoin(recipes, eq(favorites.recipeId, recipes.id))
+      .leftJoin(users, eq(recipes.authorId, users.id))
+      .leftJoin(reviews, eq(recipes.id, reviews.recipeId))
+      .where(eq(favorites.userId, userId))
+      .groupBy(favorites.id, recipes.id, users.id)
+      .orderBy(desc(favorites.createdAt));
+
+    return results.map(row => ({
+      ...row.favorite,
+      recipe: {
+        ...row.recipe!,
+        author: row.author!,
+        avgRating: Number(row.avgRating),
+        reviewCount: Number(row.reviewCount),
+      },
+    }));
+  }
+
+  async addFavorite(favorite: InsertFavorite, userId: string): Promise<Favorite> {
+    const [newFavorite] = await db
+      .insert(favorites)
+      .values({ ...favorite, userId })
+      .returning();
+    return newFavorite;
+  }
+
+  async removeFavorite(recipeId: number, userId: string): Promise<boolean> {
+    const result = await db
+      .delete(favorites)
+      .where(and(eq(favorites.recipeId, recipeId), eq(favorites.userId, userId)));
+    return result.rowCount > 0;
+  }
+
+  async isFavorite(recipeId: number, userId: string): Promise<boolean> {
+    const [favorite] = await db
+      .select()
+      .from(favorites)
+      .where(and(eq(favorites.recipeId, recipeId), eq(favorites.userId, userId)));
+    return !!favorite;
+  }
+}
+
+export const storage = new DatabaseStorage();

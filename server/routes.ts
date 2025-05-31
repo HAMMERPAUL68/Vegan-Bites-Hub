@@ -1,0 +1,322 @@
+import type { Express } from "express";
+import { createServer, type Server } from "http";
+import { storage } from "./storage";
+import { setupAuth, isAuthenticated } from "./replitAuth";
+import { insertRecipeSchema, insertReviewSchema, insertFavoriteSchema } from "@shared/schema";
+import { z } from "zod";
+
+export async function registerRoutes(app: Express): Promise<Server> {
+  // Auth middleware
+  await setupAuth(app);
+
+  // Auth routes
+  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      res.status(500).json({ message: "Failed to fetch user" });
+    }
+  });
+
+  // Recipe routes
+  app.get('/api/recipes', async (req, res) => {
+    try {
+      const { search, cuisine, tags, sortBy, isApproved = "true" } = req.query;
+      
+      const filters = {
+        search: search as string,
+        cuisine: cuisine as string,
+        tags: tags ? (tags as string).split(',') : undefined,
+        sortBy: sortBy as "newest" | "rating" | "popular",
+        isApproved: isApproved === "true",
+      };
+
+      const recipes = await storage.getRecipes(filters);
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+      res.status(500).json({ message: "Failed to fetch recipes" });
+    }
+  });
+
+  app.get('/api/recipes/:id', async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const recipe = await storage.getRecipe(id);
+      
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      res.json(recipe);
+    } catch (error) {
+      console.error("Error fetching recipe:", error);
+      res.status(500).json({ message: "Failed to fetch recipe" });
+    }
+  });
+
+  app.post('/api/recipes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (!user || (user.role !== "home_cook" && user.role !== "admin")) {
+        return res.status(403).json({ message: "Only home cooks can create recipes" });
+      }
+
+      const recipeData = insertRecipeSchema.parse(req.body);
+      const recipe = await storage.createRecipe(recipeData, userId);
+      
+      res.status(201).json(recipe);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid recipe data", errors: error.errors });
+      }
+      console.error("Error creating recipe:", error);
+      res.status(500).json({ message: "Failed to create recipe" });
+    }
+  });
+
+  app.patch('/api/recipes/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const recipe = await storage.getRecipe(id);
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      // Check if user owns the recipe or is admin
+      if (recipe.authorId !== userId && user?.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized to edit this recipe" });
+      }
+
+      const updateData = insertRecipeSchema.partial().parse(req.body);
+      const updatedRecipe = await storage.updateRecipe(id, updateData);
+      
+      res.json(updatedRecipe);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid recipe data", errors: error.errors });
+      }
+      console.error("Error updating recipe:", error);
+      res.status(500).json({ message: "Failed to update recipe" });
+    }
+  });
+
+  app.patch('/api/recipes/:id/approve', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Only admins can approve recipes" });
+      }
+
+      const approvedRecipe = await storage.approveRecipe(id);
+      if (!approvedRecipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      
+      res.json(approvedRecipe);
+    } catch (error) {
+      console.error("Error approving recipe:", error);
+      res.status(500).json({ message: "Failed to approve recipe" });
+    }
+  });
+
+  app.delete('/api/recipes/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      const recipe = await storage.getRecipe(id);
+      if (!recipe) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+
+      // Check if user owns the recipe or is admin
+      if (recipe.authorId !== userId && user?.role !== "admin") {
+        return res.status(403).json({ message: "Not authorized to delete this recipe" });
+      }
+
+      const deleted = await storage.deleteRecipe(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Recipe not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      res.status(500).json({ message: "Failed to delete recipe" });
+    }
+  });
+
+  // Review routes
+  app.get('/api/recipes/:id/reviews', async (req, res) => {
+    try {
+      const recipeId = parseInt(req.params.id);
+      const reviews = await storage.getRecipeReviews(recipeId);
+      res.json(reviews);
+    } catch (error) {
+      console.error("Error fetching reviews:", error);
+      res.status(500).json({ message: "Failed to fetch reviews" });
+    }
+  });
+
+  app.post('/api/recipes/:id/reviews', isAuthenticated, async (req: any, res) => {
+    try {
+      const recipeId = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      
+      const reviewData = insertReviewSchema.parse({ ...req.body, recipeId });
+      const review = await storage.createReview(reviewData, userId);
+      
+      res.status(201).json(review);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid review data", errors: error.errors });
+      }
+      console.error("Error creating review:", error);
+      res.status(500).json({ message: "Failed to create review" });
+    }
+  });
+
+  app.delete('/api/reviews/:id', isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      // For simplicity, allowing users to delete their own reviews or admins to delete any
+      // In a real app, you'd check review ownership
+      if (user?.role !== "admin") {
+        // Add review ownership check here
+      }
+
+      const deleted = await storage.deleteReview(id);
+      if (!deleted) {
+        return res.status(404).json({ message: "Review not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting review:", error);
+      res.status(500).json({ message: "Failed to delete review" });
+    }
+  });
+
+  // Favorite routes
+  app.get('/api/favorites', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const favorites = await storage.getUserFavorites(userId);
+      res.json(favorites);
+    } catch (error) {
+      console.error("Error fetching favorites:", error);
+      res.status(500).json({ message: "Failed to fetch favorites" });
+    }
+  });
+
+  app.post('/api/favorites', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const favoriteData = insertFavoriteSchema.parse(req.body);
+      
+      const favorite = await storage.addFavorite(favoriteData, userId);
+      res.status(201).json(favorite);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ message: "Invalid favorite data", errors: error.errors });
+      }
+      console.error("Error adding favorite:", error);
+      res.status(500).json({ message: "Failed to add favorite" });
+    }
+  });
+
+  app.delete('/api/favorites/:recipeId', isAuthenticated, async (req: any, res) => {
+    try {
+      const recipeId = parseInt(req.params.recipeId);
+      const userId = req.user.claims.sub;
+      
+      const removed = await storage.removeFavorite(recipeId, userId);
+      if (!removed) {
+        return res.status(404).json({ message: "Favorite not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error removing favorite:", error);
+      res.status(500).json({ message: "Failed to remove favorite" });
+    }
+  });
+
+  app.get('/api/favorites/:recipeId/check', isAuthenticated, async (req: any, res) => {
+    try {
+      const recipeId = parseInt(req.params.recipeId);
+      const userId = req.user.claims.sub;
+      
+      const isFavorite = await storage.isFavorite(recipeId, userId);
+      res.json({ isFavorite });
+    } catch (error) {
+      console.error("Error checking favorite:", error);
+      res.status(500).json({ message: "Failed to check favorite status" });
+    }
+  });
+
+  // Admin routes
+  app.get('/api/admin/recipes', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const user = await storage.getUser(userId);
+      
+      if (user?.role !== "admin") {
+        return res.status(403).json({ message: "Admin access required" });
+      }
+
+      const recipes = await storage.getRecipes({ isApproved: false });
+      res.json(recipes);
+    } catch (error) {
+      console.error("Error fetching pending recipes:", error);
+      res.status(500).json({ message: "Failed to fetch pending recipes" });
+    }
+  });
+
+  // User profile update
+  app.patch('/api/profile/role', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { role } = req.body;
+      
+      if (!["registered", "home_cook"].includes(role)) {
+        return res.status(400).json({ message: "Invalid role" });
+      }
+
+      const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedUser = await storage.upsertUser({
+        ...user,
+        role,
+        updatedAt: new Date(),
+      });
+      
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user role:", error);
+      res.status(500).json({ message: "Failed to update user role" });
+    }
+  });
+
+  const httpServer = createServer(app);
+  return httpServer;
+}

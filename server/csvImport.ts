@@ -83,9 +83,6 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               description: row.Intro ? row.Intro.trim() : '',
               ingredients: row.Ingredients.trim().split('\n').filter(Boolean),
               instructions: row.Method.trim().split('\n').filter(Boolean),
-              prepTime: 30, // Default values - you can adjust these
-              cookTime: 45,
-              servings: 4,
               difficulty: 'medium' as const,
               cuisine: row.Country ? row.Country.trim() : '',
               tags: [], // Can be derived from cuisine or other fields

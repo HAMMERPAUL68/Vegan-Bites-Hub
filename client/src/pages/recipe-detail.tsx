@@ -168,19 +168,17 @@ export default function RecipeDetail() {
           <p className="text-gray-600 mb-4">{recipe.description}</p>
           
           <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-            <div className="flex items-center space-x-6">
-              <div className="flex items-center">
-                <Clock className="w-5 h-5 text-vegan-secondary mr-2" />
-                <span className="text-sm">Prep: {recipe.prepTime} mins</span>
-              </div>
-              <div className="flex items-center">
-                <ChefHat className="w-5 h-5 text-vegan-accent mr-2" />
-                <span className="text-sm">Cook: {recipe.cookTime} mins</span>
-              </div>
-              <div className="flex items-center">
-                <Users className="w-5 h-5 text-vegan-primary mr-2" />
-                <span className="text-sm">Serves: {recipe.servings}</span>
-              </div>
+            <div className="flex items-center space-x-4">
+              {recipe.cuisine && (
+                <Badge variant="outline" className="text-sm">
+                  {recipe.cuisine}
+                </Badge>
+              )}
+              {recipe.difficulty && (
+                <Badge variant="outline" className="text-sm capitalize">
+                  {recipe.difficulty}
+                </Badge>
+              )}
             </div>
             
             <div className="flex items-center space-x-4">

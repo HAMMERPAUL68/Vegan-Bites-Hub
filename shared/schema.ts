@@ -39,12 +39,19 @@ export const users = pgTable("users", {
   updatedAt: timestamp("updated_at").defaultNow(),
 });
 
+export const cuisines = pgTable("cuisines", {
+  id: serial("id").primaryKey(),
+  name: varchar("name").notNull().unique(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 export const recipes = pgTable("recipes", {
   id: serial("id").primaryKey(),
   title: text("title").notNull(),
   description: text("description").notNull(),
   difficulty: varchar("difficulty"), // easy, medium, hard
-  cuisine: varchar("cuisine"),
+  cuisineId: integer("cuisine_id").references(() => cuisines.id),
   ingredients: jsonb("ingredients").notNull().$type<string[]>(),
   instructions: jsonb("instructions").notNull().$type<string[]>(),
   tags: jsonb("tags").$type<string[]>().default([]),
@@ -79,10 +86,18 @@ export const usersRelations = relations(users, ({ many }) => ({
   favorites: many(favorites),
 }));
 
+export const cuisinesRelations = relations(cuisines, ({ many }) => ({
+  recipes: many(recipes),
+}));
+
 export const recipesRelations = relations(recipes, ({ one, many }) => ({
   author: one(users, {
     fields: [recipes.authorId],
     references: [users.id],
+  }),
+  cuisine: one(cuisines, {
+    fields: [recipes.cuisineId],
+    references: [cuisines.id],
   }),
   reviews: many(reviews),
   favorites: many(favorites),
@@ -132,8 +147,15 @@ export const insertFavoriteSchema = createInsertSchema(favorites).omit({
 });
 
 // Types
+export const insertCuisineSchema = createInsertSchema(cuisines).omit({
+  id: true,
+  createdAt: true,
+});
+
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
+export type Cuisine = typeof cuisines.$inferSelect;
+export type InsertCuisine = z.infer<typeof insertCuisineSchema>;
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = z.infer<typeof insertRecipeSchema>;
 export type Review = typeof reviews.$inferSelect;

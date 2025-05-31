@@ -10,7 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Plus, User, Settings } from "lucide-react";
 import { Link } from "wouter";
-import heroImage from "@assets/image_1748708071714.png";
+import heroImage from "@assets/Vegan-Bites-Hub-Website-Images-1920-x-1080-px.jpg";
 
 export default function Home() {
   const { user, isLoading } = useAuth();

@@ -169,16 +169,7 @@ export default function RecipeDetail() {
           
           <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
             <div className="flex items-center space-x-4">
-              {recipe.cuisine && (
-                <Badge variant="outline" className="text-sm">
-                  {recipe.cuisine}
-                </Badge>
-              )}
-              {recipe.difficulty && (
-                <Badge variant="outline" className="text-sm capitalize">
-                  {recipe.difficulty}
-                </Badge>
-              )}
+              {/* Removed difficulty and cuisine badges - cuisine will show in the green pill below */}
             </div>
             
             <div className="flex items-center space-x-4">

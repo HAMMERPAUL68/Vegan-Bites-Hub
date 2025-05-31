@@ -23,44 +23,25 @@ interface CSVRecipe {
   'Image url': string; // Featured image URL
 }
 
-// Function to upload image from URL to S3
-async function uploadImageToS3(imageUrl: string, recipeTitle: string): Promise<string> {
+// Function to validate and use existing S3 URL
+async function validateS3ImageUrl(imageUrl: string): Promise<string> {
   try {
-    // Fetch the image from the URL
-    const response = await fetch(imageUrl);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch image: ${response.statusText}`);
+    // If it's already an S3 URL from our bucket, use it directly
+    if (imageUrl.includes(process.env.AWS_S3_BUCKET_NAME!) && imageUrl.includes('amazonaws.com')) {
+      return imageUrl;
     }
-
-    const imageBuffer = await response.buffer();
-    const contentType = response.headers.get('content-type') || 'image/jpeg';
-    const fileExtension = contentType.includes('png') ? 'png' : 'jpg';
     
-    // Create a safe filename
-    const safeFileName = recipeTitle
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '');
-    
-    const key = `recipe-images/${safeFileName}-${Date.now()}.${fileExtension}`;
-
-    // Upload to S3
-    const uploadCommand = new PutObjectCommand({
-      Bucket: process.env.AWS_S3_BUCKET_NAME!,
-      Key: key,
-      Body: imageBuffer,
-      ContentType: contentType,
-    });
-
-    await s3Client.send(uploadCommand);
-
-    // Return the public URL
-    return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+    // For other URLs, we could optionally validate they exist
+    const response = await fetch(imageUrl, { method: 'HEAD' });
+    if (response.ok) {
+      return imageUrl;
+    } else {
+      console.warn(`Image URL not accessible: ${imageUrl}`);
+      return imageUrl; // Return anyway, let the frontend handle broken images
+    }
   } catch (error) {
-    console.error('Error uploading image to S3:', error);
-    // Return original URL as fallback
-    return imageUrl;
+    console.error('Error validating image URL:', error);
+    return imageUrl; // Return original URL as fallback
   }
 }
 
@@ -89,11 +70,11 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               continue;
             }
 
-            // Upload image to S3 if URL provided
+            // Validate and use S3 image URL if provided
             let featuredImageUrl = '';
             if (row['Image url'] && row['Image url'].trim()) {
-              console.log(`Uploading image for recipe: ${row['Recipe Title']}`);
-              featuredImageUrl = await uploadImageToS3(row['Image url'].trim(), row['Recipe Title']);
+              console.log(`Validating image URL for recipe: ${row['Recipe Title']}`);
+              featuredImageUrl = await validateS3ImageUrl(row['Image url'].trim());
             }
 
             // Create recipe object

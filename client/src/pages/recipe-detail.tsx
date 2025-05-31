@@ -197,11 +197,8 @@ export default function RecipeDetail() {
             </div>
             
             <div className="flex flex-wrap gap-2">
-              {recipe.difficulty && (
-                <Badge variant="secondary">{recipe.difficulty}</Badge>
-              )}
               {recipe.cuisine && (
-                <Badge variant="outline">{recipe.cuisine}</Badge>
+                <Badge variant="secondary">{recipe.cuisine}</Badge>
               )}
               {recipe.tags?.map((tag: string) => (
                 <Badge key={tag} variant="outline" className="text-vegan-primary border-vegan-primary">

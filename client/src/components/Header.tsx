@@ -136,12 +136,6 @@ export default function Header() {
                 >
                   Sign In
                 </Button>
-                <Button 
-                  className="bg-vegan-accent text-white px-4 py-2 rounded-lg hover:bg-orange-400 transition-colors"
-                  onClick={() => window.location.href = "/api/login"}
-                >
-                  Share Recipe
-                </Button>
               </div>
             )}
           </div>
@@ -231,12 +225,6 @@ export default function Header() {
                       onClick={() => window.location.href = "/api/login"}
                     >
                       Sign In
-                    </Button>
-                    <Button 
-                      className="w-full bg-vegan-accent text-white hover:bg-orange-400"
-                      onClick={() => window.location.href = "/api/login"}
-                    >
-                      Share Recipe
                     </Button>
                   </div>
                 )}

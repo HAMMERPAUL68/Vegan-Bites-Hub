@@ -66,7 +66,7 @@ export default function Home() {
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div>
               <h1 className="text-3xl font-bold mb-2">
-                Welcome back, {user?.firstName || "Chef"}! 👋
+                Welcome back, {user?.firstName || "Chef"}!
               </h1>
               <p className="text-xl opacity-90">
                 Ready to discover some amazing vegan recipes today?

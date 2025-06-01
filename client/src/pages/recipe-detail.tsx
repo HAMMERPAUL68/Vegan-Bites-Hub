@@ -224,11 +224,17 @@ export default function RecipeDetail() {
                     let ingredients: string[] = [];
                     if (typeof recipe.ingredients === 'string') {
                       try {
-                        // Try to parse as JSON array first
+                        // First try to parse as JSON array
                         ingredients = JSON.parse(recipe.ingredients);
                       } catch {
-                        // Fallback to splitting on line breaks
-                        ingredients = recipe.ingredients.split('\n').filter((line: string) => line.trim());
+                        try {
+                          // Try to handle the escaped JSON format from CSV
+                          const cleanedJson = recipe.ingredients.replace(/\"\"/g, '"');
+                          ingredients = JSON.parse(cleanedJson);
+                        } catch {
+                          // Fallback to splitting on line breaks
+                          ingredients = recipe.ingredients.split('\n').filter((line: string) => line.trim());
+                        }
                       }
                     } else if (Array.isArray(recipe.ingredients)) {
                       ingredients = recipe.ingredients;
@@ -255,11 +261,17 @@ export default function RecipeDetail() {
                 let instructions: string[] = [];
                 if (typeof recipe.instructions === 'string') {
                   try {
-                    // Try to parse as JSON array first
+                    // First try to parse as JSON array
                     instructions = JSON.parse(recipe.instructions);
                   } catch {
-                    // Fallback to splitting on line breaks
-                    instructions = recipe.instructions.split('\n').filter((line: string) => line.trim());
+                    try {
+                      // Try to handle the escaped JSON format from CSV
+                      const cleanedJson = recipe.instructions.replace(/\"\"/g, '"');
+                      instructions = JSON.parse(cleanedJson);
+                    } catch {
+                      // Fallback to splitting on line breaks
+                      instructions = recipe.instructions.split('\n').filter((line: string) => line.trim());
+                    }
                   }
                 } else if (Array.isArray(recipe.instructions)) {
                   instructions = recipe.instructions;

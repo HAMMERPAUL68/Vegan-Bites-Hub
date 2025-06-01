@@ -19,7 +19,12 @@ interface RecipeCardProps {
     cookTime: number;
     servings: number;
     difficulty?: string;
-    cuisine?: string;
+    cuisine?: {
+      id: number;
+      name: string;
+      isActive: boolean;
+      createdAt: string;
+    };
     tags?: string[];
     featuredImage?: string;
     authorId: string;
@@ -230,7 +235,7 @@ export default function RecipeCard({ recipe, showFavorite = false, showActions =
           <div className="flex flex-wrap gap-1 mb-3">
             {recipe.cuisine && (
               <Badge variant="outline" className="text-xs">
-                {recipe.cuisine}
+                {recipe.cuisine.name}
               </Badge>
             )}
             {recipe.tags?.slice(0, 2).map((tag) => (

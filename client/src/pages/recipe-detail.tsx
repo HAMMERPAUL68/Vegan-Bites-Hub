@@ -228,8 +228,14 @@ export default function RecipeDetail() {
                         ingredients = JSON.parse(recipe.ingredients);
                       } catch {
                         try {
-                          // Try to handle the escaped JSON format from CSV
-                          const cleanedJson = recipe.ingredients.replace(/\"\"/g, '"');
+                          // Try to handle the malformed JSON object format from CSV
+                          let cleanedJson = recipe.ingredients;
+                          // Replace double quotes with single quotes
+                          cleanedJson = cleanedJson.replace(/\"\"/g, '"');
+                          // If it's a JSON object (starts with {), convert to array
+                          if (cleanedJson.startsWith('{') && cleanedJson.endsWith('}')) {
+                            cleanedJson = '[' + cleanedJson.slice(1, -1) + ']';
+                          }
                           ingredients = JSON.parse(cleanedJson);
                         } catch {
                           // Fallback to splitting on line breaks
@@ -265,8 +271,14 @@ export default function RecipeDetail() {
                     instructions = JSON.parse(recipe.instructions);
                   } catch {
                     try {
-                      // Try to handle the escaped JSON format from CSV
-                      const cleanedJson = recipe.instructions.replace(/\"\"/g, '"');
+                      // Try to handle the malformed JSON object format from CSV
+                      let cleanedJson = recipe.instructions;
+                      // Replace double quotes with single quotes
+                      cleanedJson = cleanedJson.replace(/\"\"/g, '"');
+                      // If it's a JSON object (starts with {), convert to array
+                      if (cleanedJson.startsWith('{') && cleanedJson.endsWith('}')) {
+                        cleanedJson = '[' + cleanedJson.slice(1, -1) + ']';
+                      }
                       instructions = JSON.parse(cleanedJson);
                     } catch {
                       // Fallback to splitting on line breaks

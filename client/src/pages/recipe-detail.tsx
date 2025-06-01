@@ -246,6 +246,20 @@ export default function RecipeDetail() {
           </div>
         </div>
 
+        {/* Helpful Notes */}
+        {recipe.helpfulNotes && (
+          <div className="mt-8">
+            <h2 className="text-xl font-semibold text-gray-900 mb-4">Helpful Notes</h2>
+            <Card>
+              <CardContent className="p-4">
+                <div className="whitespace-pre-line text-sm text-gray-700">
+                  {recipe.helpfulNotes}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Gallery Images */}
         {recipe.galleryImages && recipe.galleryImages.length > 0 && (
           <div className="mt-8">

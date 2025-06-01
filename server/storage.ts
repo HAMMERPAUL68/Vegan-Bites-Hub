@@ -226,18 +226,20 @@ export class DatabaseStorage implements IStorage {
     authorId?: string;
     isApproved?: boolean;
     sortBy?: "newest" | "rating" | "popular";
-  }): Promise<(Recipe & { author: User; avgRating: number; reviewCount: number })[]> {
+  }): Promise<(Recipe & { author: User; cuisine?: Cuisine; avgRating: number; reviewCount: number })[]> {
     let query = db
       .select({
         recipe: recipes,
         author: users,
+        cuisine: cuisines,
         avgRating: sql<number>`COALESCE(AVG(${reviews.rating}), 0)`,
         reviewCount: sql<number>`COUNT(${reviews.id})`,
       })
       .from(recipes)
       .leftJoin(users, eq(recipes.authorId, users.id))
+      .leftJoin(cuisines, eq(recipes.cuisineId, cuisines.id))
       .leftJoin(reviews, eq(recipes.id, reviews.recipeId))
-      .groupBy(recipes.id, users.id);
+      .groupBy(recipes.id, users.id, cuisines.id);
 
     const conditions = [];
     
@@ -252,7 +254,7 @@ export class DatabaseStorage implements IStorage {
     }
     
     if (filters?.cuisine) {
-      conditions.push(eq(recipes.cuisine, filters.cuisine));
+      conditions.push(eq(cuisines.name, filters.cuisine));
     }
     
     if (filters?.authorId) {
@@ -282,6 +284,7 @@ export class DatabaseStorage implements IStorage {
     return results.map(row => ({
       ...row.recipe,
       author: row.author!,
+      cuisine: row.cuisine || undefined,
       avgRating: Number(row.avgRating),
       reviewCount: Number(row.reviewCount),
     }));

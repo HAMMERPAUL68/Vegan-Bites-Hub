@@ -169,10 +169,10 @@ export default function RecipeCard({ recipe, showFavorite = false, showActions =
           )}
           
           {/* Cuisine Pill */}
-          {recipe.cuisine && (
+          {recipe.cuisine?.name && (
             <div className="absolute top-3 left-3">
               <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/90 backdrop-blur-sm text-gray-800 shadow-sm border border-white/20">
-                {recipe.cuisine}
+                {recipe.cuisine.name}
               </span>
             </div>
           )}

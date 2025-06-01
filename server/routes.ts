@@ -6,6 +6,16 @@ import { importRecipesFromCSV } from "./csvImport";
 import multer from "multer";
 import { insertRecipeSchema, insertReviewSchema, insertFavoriteSchema } from "@shared/schema";
 import { z } from "zod";
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+
+// Configure AWS S3
+const s3 = new S3Client({
+  region: process.env.AWS_S3_REGION,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+  },
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer for file uploads
@@ -77,7 +87,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  app.post('/api/recipes', isAuthenticated, async (req: any, res) => {
+  app.post('/api/recipes', isAuthenticated, upload.array('images', 10), async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
       const user = await storage.getUser(userId);
@@ -86,12 +96,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(403).json({ message: "Only home cooks can create recipes" });
       }
 
-      const recipeData = insertRecipeSchema.parse(req.body);
+      console.log("Form data received:", req.body);
+      console.log("Files received:", req.files?.length || 0);
+
+      // Parse form data
+      const formData = {
+        title: req.body.title,
+        description: req.body.description,
+        ingredients: req.body.ingredients,
+        instructions: req.body.instructions,
+        helpfulNotes: req.body.helpfulNotes || null,
+        cuisineId: req.body.cuisineId ? parseInt(req.body.cuisineId) : null,
+        tags: req.body.tags ? JSON.parse(req.body.tags) : [],
+        featuredImage: null as string | null,
+        images: [] as string[],
+      };
+
+      console.log("Parsed form data:", formData);
+
+      const recipeData = insertRecipeSchema.parse(formData);
       const recipe = await storage.createRecipe(recipeData, userId);
       
       res.status(201).json(recipe);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation errors:", error.errors);
         return res.status(400).json({ message: "Invalid recipe data", errors: error.errors });
       }
       console.error("Error creating recipe:", error);

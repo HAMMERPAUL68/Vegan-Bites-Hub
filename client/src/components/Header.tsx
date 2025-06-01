@@ -123,10 +123,6 @@ export default function Header() {
                       <User className="mr-2 h-4 w-4" />
                       <span>Profile</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => window.location.href = "/profile"}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
                     {user?.role === "admin" && (
                       <DropdownMenuItem onClick={() => window.location.href = "/admin"}>
                         <Shield className="mr-2 h-4 w-4" />

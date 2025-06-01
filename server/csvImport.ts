@@ -12,26 +12,51 @@ async function findOrCreateCuisine(cuisineName: string): Promise<number | null> 
 
   const cleanName = cuisineName.trim();
   
+  // Country to cuisine mapping for common variations
+  const countryToCuisineMap: { [key: string]: string } = {
+    'Italy': 'Italian',
+    'Greece': 'Greek', 
+    'Mexico': 'Mexican',
+    'Spain': 'Spanish',
+    'France': 'French',
+    'China': 'Chinese',
+    'Japan': 'Japanese',
+    'Thailand': 'Thai',
+    'India': 'Indian',
+    'Turkey': 'Turkish',
+    'Lebanon': 'Lebanese',
+    'Morocco': 'Moroccan',
+    'United States': 'American',
+    'USA': 'American',
+    'UK': 'British',
+    'United Kingdom': 'British'
+  };
+
+  // First try direct mapping
+  const mappedCuisine = countryToCuisineMap[cleanName];
+  const searchName = mappedCuisine || cleanName;
+  
   // Try to find existing cuisine (case-insensitive)
   const cuisines = await storage.getCuisines();
   const existingCuisine = cuisines.find(c => 
-    c.name.toLowerCase() === cleanName.toLowerCase()
+    c.name.toLowerCase() === searchName.toLowerCase()
   );
   
   if (existingCuisine) {
+    console.log(`Mapped "${cleanName}" to existing cuisine: ${existingCuisine.name}`);
     return existingCuisine.id;
   }
   
-  // Create new cuisine if it doesn't exist
+  // Create new cuisine if it doesn't exist (use the mapped name if available)
   try {
     const newCuisine = await storage.createCuisine({
-      name: cleanName,
+      name: searchName,
       isActive: true
     });
-    console.log(`Created new cuisine: ${cleanName}`);
+    console.log(`Created new cuisine: ${searchName} (from country: ${cleanName})`);
     return newCuisine.id;
   } catch (error) {
-    console.error(`Failed to create cuisine "${cleanName}":`, error);
+    console.error(`Failed to create cuisine "${searchName}" from country "${cleanName}":`, error);
     return null;
   }
 }
@@ -119,8 +144,14 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
                 .filter((tag: string) => tag.length > 0);
             }
 
-            // Find or create cuisine
+            // Find or create cuisine with validation
             const cuisineId = await findOrCreateCuisine(row.Country);
+            if (!cuisineId) {
+              errors.push(`Recipe "${row['Recipe Title']}": Could not determine cuisine from country "${row.Country}"`);
+              continue;
+            }
+            
+            console.log(`Recipe "${row['Recipe Title']}" assigned to cuisine ID: ${cuisineId}`);
 
             // Create recipe object
             const recipeData = {

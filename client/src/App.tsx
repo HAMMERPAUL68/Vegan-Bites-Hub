@@ -9,6 +9,7 @@ import Home from "@/pages/home";
 import RecipeDetail from "@/pages/recipe-detail";
 import CreateRecipe from "@/pages/create-recipe";
 import AdminDashboard from "@/pages/admin-dashboard";
+import Profile from "@/pages/profile";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -27,6 +28,7 @@ function Router() {
           <Route path="/recipe/:id" component={RecipeDetail} />
           <Route path="/create-recipe" component={CreateRecipe} />
           <Route path="/admin" component={AdminDashboard} />
+          <Route path="/profile" component={Profile} />
         </>
       )}
       <Route component={NotFound} />

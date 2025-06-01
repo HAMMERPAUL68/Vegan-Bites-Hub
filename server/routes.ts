@@ -71,6 +71,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.patch('/api/auth/user', isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user.claims.sub;
+      const { firstName, lastName } = req.body;
+      
+      const currentUser = await storage.getUser(userId);
+      if (!currentUser) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      const updatedUser = await storage.upsertUser({
+        ...currentUser,
+        firstName: firstName?.trim() || currentUser.firstName,
+        lastName: lastName?.trim() || currentUser.lastName,
+        updatedAt: new Date(),
+      });
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error updating user:", error);
+      res.status(500).json({ message: "Failed to update user" });
+    }
+  });
+
   // Cuisine routes
   app.get('/api/cuisines', async (req, res) => {
     try {

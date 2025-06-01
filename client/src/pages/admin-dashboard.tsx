@@ -216,13 +216,13 @@ export default function AdminDashboard() {
 
   // Selection handlers
   const handleSelectAll = () => {
-    if (!pendingRecipes?.data) return;
+    if (!pendingRecipes || pendingRecipes.length === 0) return;
     
     if (selectAll) {
       setSelectedRecipes(new Set());
       setSelectAll(false);
     } else {
-      const allIds = new Set(pendingRecipes.data.map((recipe: any) => recipe.id) as number[]);
+      const allIds = new Set(pendingRecipes.map((recipe: any) => recipe.id) as number[]);
       setSelectedRecipes(allIds);
       setSelectAll(true);
     }
@@ -236,7 +236,7 @@ export default function AdminDashboard() {
       newSelection.add(recipeId);
     }
     setSelectedRecipes(newSelection);
-    setSelectAll(pendingRecipes?.data && newSelection.size === pendingRecipes.data.length);
+    setSelectAll(pendingRecipes && newSelection.size === pendingRecipes.length);
   };
 
   const handleBulkApprove = () => {

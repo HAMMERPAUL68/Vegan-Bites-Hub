@@ -4,6 +4,38 @@ import csv from 'csv-parser';
 import { Readable } from 'stream';
 import fetch from 'node-fetch';
 
+// Helper function to find or create cuisine by name
+async function findOrCreateCuisine(cuisineName: string): Promise<number | null> {
+  if (!cuisineName || !cuisineName.trim()) {
+    return null;
+  }
+
+  const cleanName = cuisineName.trim();
+  
+  // Try to find existing cuisine (case-insensitive)
+  const cuisines = await storage.getCuisines();
+  const existingCuisine = cuisines.find(c => 
+    c.name.toLowerCase() === cleanName.toLowerCase()
+  );
+  
+  if (existingCuisine) {
+    return existingCuisine.id;
+  }
+  
+  // Create new cuisine if it doesn't exist
+  try {
+    const newCuisine = await storage.createCuisine({
+      name: cleanName,
+      isActive: true
+    });
+    console.log(`Created new cuisine: ${cleanName}`);
+    return newCuisine.id;
+  } catch (error) {
+    console.error(`Failed to create cuisine "${cleanName}":`, error);
+    return null;
+  }
+}
+
 // Initialize S3 client
 const s3Client = new S3Client({
   region: process.env.AWS_S3_REGION!,
@@ -83,9 +115,12 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
             if (row.Keywords && row.Keywords.trim()) {
               tags = row.Keywords.trim()
                 .split(',')
-                .map(tag => tag.trim())
-                .filter(tag => tag.length > 0);
+                .map((tag: string) => tag.trim())
+                .filter((tag: string) => tag.length > 0);
             }
+
+            // Find or create cuisine
+            const cuisineId = await findOrCreateCuisine(row.Country);
 
             // Create recipe object
             const recipeData = {
@@ -94,7 +129,7 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               ingredients: row.Ingredients.trim(),
               instructions: row.Method.trim(),
               helpfulNotes: row['Helpful Notes'] ? row['Helpful Notes'].trim() : '',
-              cuisine: row.Country ? row.Country.trim() : '',
+              cuisineId: cuisineId,
               tags: tags,
               featuredImage: featuredImageUrl,
               isApproved: false, // Will need admin approval

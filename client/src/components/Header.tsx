@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -14,6 +15,15 @@ export default function Header() {
   const [searchQuery, setSearchQuery] = useState("");
   const [, setLocation] = useLocation();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Fetch pending recipes count for admin notification badge
+  const { data: pendingRecipes } = useQuery({
+    queryKey: ["/api/admin/recipes"],
+    enabled: user?.role === "admin",
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
+  const pendingCount = pendingRecipes?.length || 0;
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -87,6 +97,11 @@ export default function Header() {
                           {user?.firstName?.[0] || user?.email?.[0] || "U"}
                         </AvatarFallback>
                       </Avatar>
+                      {user?.role === "admin" && pendingCount > 0 && (
+                        <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                          {pendingCount > 9 ? "9+" : pendingCount}
+                        </span>
+                      )}
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent className="w-56" align="end" forceMount>
@@ -168,12 +183,19 @@ export default function Header() {
                 {isAuthenticated ? (
                   <div className="flex flex-col space-y-4 pt-4 border-t">
                     <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={user?.profileImageUrl} alt={user?.firstName || "User"} />
-                        <AvatarFallback>
-                          {user?.firstName?.[0] || user?.email?.[0] || "U"}
-                        </AvatarFallback>
-                      </Avatar>
+                      <div className="relative">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={user?.profileImageUrl} alt={user?.firstName || "User"} />
+                          <AvatarFallback>
+                            {user?.firstName?.[0] || user?.email?.[0] || "U"}
+                          </AvatarFallback>
+                        </Avatar>
+                        {user?.role === "admin" && pendingCount > 0 && (
+                          <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                            {pendingCount > 9 ? "9+" : pendingCount}
+                          </span>
+                        )}
+                      </div>
                       <div>
                         <p className="font-medium">
                           {user?.firstName ? `${user.firstName} ${user?.lastName || ""}` : user?.email}

@@ -24,6 +24,37 @@ export default function Home() {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("browse");
 
+  // Helper functions for cuisine display
+  const getCuisineEmoji = (cuisine: string) => {
+    const emojiMap: { [key: string]: string } = {
+      "Mediterranean": "🫒",
+      "Asian": "🥢",
+      "Mexican": "🌮",
+      "Indian": "🍛",
+      "Italian": "🍝",
+      "Middle Eastern": "🥙",
+      "American": "🍔",
+      "Thai": "🌶️",
+      "Chinese": "🥟",
+      "Japanese": "🍣"
+    };
+    return emojiMap[cuisine] || "🍽️";
+  };
+
+  const getCuisineGradient = (index: number) => {
+    const gradients = [
+      "bg-gradient-to-br from-blue-500 to-purple-600",
+      "bg-gradient-to-br from-red-500 to-orange-600",
+      "bg-gradient-to-br from-green-500 to-teal-600",
+      "bg-gradient-to-br from-yellow-500 to-orange-500",
+      "bg-gradient-to-br from-purple-500 to-pink-600",
+      "bg-gradient-to-br from-indigo-500 to-blue-600",
+      "bg-gradient-to-br from-pink-500 to-rose-600",
+      "bg-gradient-to-br from-teal-500 to-cyan-600"
+    ];
+    return gradients[index % gradients.length];
+  };
+
   const { data: popularRecipes = [], isLoading: popularRecipesLoading } = useQuery({
     queryKey: ["/api/recipes", "popular"],
     queryFn: async () => {
@@ -38,6 +69,15 @@ export default function Home() {
     queryFn: async () => {
       const response = await fetch("/api/recipes?isApproved=true&sortBy=newest&limit=10");
       if (!response.ok) throw new Error("Failed to fetch recent recipes");
+      return response.json();
+    },
+  });
+
+  const { data: popularCuisines = [], isLoading: popularCuisinesLoading } = useQuery({
+    queryKey: ["/api/cuisines", "popular"],
+    queryFn: async () => {
+      const response = await fetch("/api/cuisines/popular");
+      if (!response.ok) throw new Error("Failed to fetch popular cuisines");
       return response.json();
     },
   });
@@ -281,6 +321,72 @@ export default function Home() {
                       </div>
                     </div>
                   </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
+          </Carousel>
+        )}
+      </section>
+
+      {/* Popular Cuisines Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Popular Cuisines</h2>
+          <p className="text-gray-600">Explore flavors from around the world</p>
+        </div>
+
+        {popularCuisinesLoading ? (
+          <div className="flex gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex-1 animate-pulse">
+                <div className="bg-gray-200 rounded-xl h-64 mb-4"></div>
+                <div className="bg-gray-200 h-6 rounded mb-2"></div>
+                <div className="bg-gray-200 h-4 rounded w-2/3"></div>
+              </div>
+            ))}
+          </div>
+        ) : popularCuisines.length === 0 ? (
+          <Card className="p-8 text-center">
+            <CardContent>
+              <h3 className="text-lg font-semibold mb-2">No cuisine data available yet</h3>
+              <p className="text-gray-600">Check back after recipe imports for cuisine variety!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {popularCuisines.map((cuisine: any, index: number) => (
+                <CarouselItem key={cuisine.cuisine} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                  <div className="relative h-64 rounded-xl overflow-hidden group cursor-pointer">
+                    {cuisine.featuredImage ? (
+                      <img
+                        src={cuisine.featuredImage}
+                        alt={cuisine.cuisine}
+                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                      />
+                    ) : (
+                      <div className={`w-full h-full flex items-center justify-center ${getCuisineGradient(index)}`}>
+                        <div className="text-white text-6xl">{getCuisineEmoji(cuisine.cuisine)}</div>
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                    <div className="absolute bottom-0 left-0 right-0 p-6">
+                      <h3 className="text-white text-xl font-bold mb-2">
+                        {cuisine.cuisine}
+                      </h3>
+                      <div className="flex items-center gap-2 text-white/80 text-sm">
+                        <span>{cuisine.recipeCount} recipes</span>
+                      </div>
+                    </div>
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>

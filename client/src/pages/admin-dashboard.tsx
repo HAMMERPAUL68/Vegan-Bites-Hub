@@ -11,7 +11,7 @@ import { Label } from "@/components/ui/label";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { isUnauthorizedError } from "@/lib/authUtils";
-import { ArrowLeft, Check, X, Eye, Clock, Users, ChefHat, Upload, FileText } from "lucide-react";
+import { ArrowLeft, Check, X, Eye, Clock, Users, ChefHat, Upload, FileText, CheckSquare, Square } from "lucide-react";
 import { Link, useLocation } from "wouter";
 
 export default function AdminDashboard() {
@@ -214,6 +214,36 @@ export default function AdminDashboard() {
     }
   };
 
+  // Selection handlers
+  const handleSelectAll = () => {
+    if (!pendingRecipes?.data) return;
+    
+    if (selectAll) {
+      setSelectedRecipes(new Set());
+      setSelectAll(false);
+    } else {
+      const allIds = new Set(pendingRecipes.data.map((recipe: any) => recipe.id) as number[]);
+      setSelectedRecipes(allIds);
+      setSelectAll(true);
+    }
+  };
+
+  const handleRecipeToggle = (recipeId: number) => {
+    const newSelection = new Set(selectedRecipes);
+    if (newSelection.has(recipeId)) {
+      newSelection.delete(recipeId);
+    } else {
+      newSelection.add(recipeId);
+    }
+    setSelectedRecipes(newSelection);
+    setSelectAll(pendingRecipes?.data && newSelection.size === pendingRecipes.data.length);
+  };
+
+  const handleBulkApprove = () => {
+    if (selectedRecipes.size === 0) return;
+    bulkApproveMutation.mutate(Array.from(selectedRecipes));
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white">
@@ -375,10 +405,57 @@ export default function AdminDashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {pendingRecipes.map((recipe: any) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
-                ))}
+              <div className="space-y-6">
+                {/* Bulk Actions Bar */}
+                <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
+                  <div className="flex items-center gap-4">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleSelectAll}
+                      className="flex items-center gap-2"
+                    >
+                      {selectAll ? <CheckSquare className="w-4 h-4" /> : <Square className="w-4 h-4" />}
+                      {selectAll ? "Deselect All" : "Select All"}
+                    </Button>
+                    <span className="text-sm text-gray-600">
+                      {selectedRecipes.size} of {pendingRecipes.length} selected
+                    </span>
+                  </div>
+                  
+                  {selectedRecipes.size > 0 && (
+                    <Button
+                      onClick={handleBulkApprove}
+                      disabled={bulkApproveMutation.isPending}
+                      className="flex items-center gap-2"
+                    >
+                      <Check className="w-4 h-4" />
+                      {bulkApproveMutation.isPending ? "Approving..." : `Approve ${selectedRecipes.size} Recipe${selectedRecipes.size > 1 ? 's' : ''}`}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Recipe Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {pendingRecipes.map((recipe: any) => (
+                    <div key={recipe.id} className="relative">
+                      {/* Selection Checkbox */}
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleRecipeToggle(recipe.id)}
+                        className="absolute top-2 left-2 z-10 bg-white/90 backdrop-blur-sm border-2 w-8 h-8 p-0"
+                      >
+                        {selectedRecipes.has(recipe.id) ? 
+                          <CheckSquare className="w-4 h-4" /> : 
+                          <Square className="w-4 h-4" />
+                        }
+                      </Button>
+                      
+                      <RecipeCard recipe={recipe} />
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </TabsContent>

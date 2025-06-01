@@ -57,13 +57,25 @@ export default function CreateRecipe() {
   }, [isAuthenticated, isLoading, user, toast, setLocation]);
 
   // Helper functions for managing tags
-  const addTag = () => {
-    if (newTag.trim() && !formData.tags.includes(newTag.trim())) {
+  const addTag = (tagValue?: string) => {
+    const tag = (tagValue || newTag).trim();
+    if (tag && !formData.tags.includes(tag)) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, newTag.trim()]
+        tags: [...prev.tags, tag]
       }));
+      if (!tagValue) setNewTag("");
+    }
+  };
+
+  const handleTagInput = (value: string) => {
+    // Handle comma-separated tags
+    if (value.includes(',')) {
+      const tags = value.split(',').map(t => t.trim()).filter(t => t);
+      tags.forEach(tag => addTag(tag));
       setNewTag("");
+    } else {
+      setNewTag(value);
     }
   };
 
@@ -290,12 +302,12 @@ export default function CreateRecipe() {
                   <div className="flex gap-2">
                     <Input
                       value={newTag}
-                      onChange={(e) => setNewTag(e.target.value)}
-                      placeholder="Add a tag"
+                      onChange={(e) => handleTagInput(e.target.value)}
+                      placeholder="Add tags (separate with commas or press Enter)"
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                       className="flex-1"
                     />
-                    <Button type="button" onClick={addTag} variant="outline">
+                    <Button type="button" onClick={() => addTag()} variant="outline">
                       <Plus className="w-4 h-4" />
                     </Button>
                   </div>

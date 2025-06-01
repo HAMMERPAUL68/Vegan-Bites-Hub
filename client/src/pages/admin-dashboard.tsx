@@ -21,6 +21,8 @@ export default function AdminDashboard() {
   const queryClient = useQueryClient();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [importResult, setImportResult] = useState<any>(null);
+  const [selectedRecipes, setSelectedRecipes] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   // Redirect if not admin
   useEffect(() => {
@@ -105,6 +107,42 @@ export default function AdminDashboard() {
       toast({
         title: "Error",
         description: "Failed to delete recipe",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const bulkApproveMutation = useMutation({
+    mutationFn: async (recipeIds: number[]) => {
+      await Promise.all(
+        recipeIds.map(id => apiRequest("PATCH", `/api/recipes/${id}/approve`))
+      );
+    },
+    onSuccess: (_, recipeIds) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/recipes"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/recipes"] });
+      setSelectedRecipes(new Set());
+      setSelectAll(false);
+      toast({
+        title: "Recipes approved",
+        description: `${recipeIds.length} recipes have been approved and are now visible to all users.`,
+      });
+    },
+    onError: (error) => {
+      if (isUnauthorizedError(error)) {
+        toast({
+          title: "Unauthorized",
+          description: "You are logged out. Logging in again...",
+          variant: "destructive",
+        });
+        setTimeout(() => {
+          window.location.href = "/api/login";
+        }, 500);
+        return;
+      }
+      toast({
+        title: "Error",
+        description: "Failed to approve some recipes",
         variant: "destructive",
       });
     },

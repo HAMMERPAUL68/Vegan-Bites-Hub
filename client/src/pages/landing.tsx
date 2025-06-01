@@ -1,69 +1,236 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import RecipeFilters from "@/components/RecipeFilters";
 import RecipeCard from "@/components/RecipeCard";
 import { useQuery } from "@tanstack/react-query";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Leaf, Users, Star, ChefHat } from "lucide-react";
-import logoPath from "@assets/VEGAN BITES HUB MAIN LOGO  350 x 100 Right.png";
+import heroImage from "@assets/Vegan-Bites-Hub-Website-Images-1920-x-1080-px.jpg";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export default function Landing() {
   const { toast } = useToast();
   const { isAuthenticated, isLoading } = useAuth();
+  const [activeFilters, setActiveFilters] = useState({
+    search: "",
+    cuisine: "",
+    difficulty: "",
+    sortBy: "newest",
+    tags: [] as string[],
+  });
+
+  // Helper functions for cuisine display
+  const getCuisineEmoji = (cuisine: string) => {
+    const emojiMap: { [key: string]: string } = {
+      "Mediterranean": "🫒",
+      "Asian": "🥢",
+      "Mexican": "🌮",
+      "Indian": "🍛",
+      "Italian": "🍝",
+      "Middle Eastern": "🥙",
+      "American": "🍔",
+      "Thai": "🌶️",
+      "Chinese": "🥟",
+      "Japanese": "🍣",
+      "Greek": "🫒"
+    };
+    return emojiMap[cuisine] || "🍽️";
+  };
+
+  const getCuisineGradient = (index: number) => {
+    const gradients = [
+      "bg-gradient-to-br from-blue-500 to-purple-600",
+      "bg-gradient-to-br from-red-500 to-orange-600",
+      "bg-gradient-to-br from-green-500 to-teal-600",
+      "bg-gradient-to-br from-yellow-500 to-orange-500",
+      "bg-gradient-to-br from-pink-500 to-rose-600",
+      "bg-gradient-to-br from-indigo-500 to-blue-600"
+    ];
+    return gradients[index % gradients.length];
+  };
 
   const { data: recipes = [], isLoading: recipesLoading } = useQuery({
-    queryKey: ["/api/recipes"],
+    queryKey: ["/api/recipes", activeFilters.sortBy],
     queryFn: async () => {
-      const response = await fetch("/api/recipes?isApproved=true&sortBy=rating");
+      const params = new URLSearchParams();
+      params.append("isApproved", "true");
+      if (activeFilters.sortBy) params.append("sortBy", activeFilters.sortBy);
+      
+      const response = await fetch(`/api/recipes?${params}`);
       if (!response.ok) throw new Error("Failed to fetch recipes");
       return response.json();
     },
   });
 
+  const { data: recentRecipes = [], isLoading: recentLoading } = useQuery({
+    queryKey: ["/api/recipes", "recent"],
+    queryFn: async () => {
+      const response = await fetch("/api/recipes?isApproved=true&sortBy=newest");
+      if (!response.ok) throw new Error("Failed to fetch recent recipes");
+      return response.json();
+    },
+  });
+
+  const { data: popularCuisines = [], isLoading: cuisinesLoading } = useQuery({
+    queryKey: ["/api/cuisines/popular"],
+    queryFn: async () => {
+      const response = await fetch("/api/cuisines/popular");
+      if (!response.ok) throw new Error("Failed to fetch popular cuisines");
+      return response.json();
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Header />
+        <div className="flex items-center justify-center min-h-[50vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-vegan-primary"></div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white">
       <Header />
       
-      {/* Hero Section */}
-      <section className="bg-gradient-to-r from-vegan-primary to-vegan-secondary text-white py-16">
+      {/* Welcome Section */}
+      <section 
+        className="relative py-16 text-white"
+        style={{
+          backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url(${heroImage})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat'
+        }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div>
-              <h1 className="text-4xl lg:text-5xl font-bold mb-6">
-                Discover Amazing <span className="text-vegan-accent">Vegan Recipes</span>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="max-w-xl">
+              <h1 className="text-4xl font-bold mb-4">
+                Discover Amazing Vegan Recipes
               </h1>
-              <p className="text-xl mb-8 opacity-90">
-                Join our community of passionate plant-based cooks. Share, discover, and create delicious vegan recipes together.
+              <p className="text-xl opacity-90 leading-relaxed">
+                Join our community of passionate plant-based cooks sharing delicious, healthy meals from around the world.
               </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  className="bg-vegan-accent text-white px-8 py-3 rounded-lg font-semibold hover:bg-orange-400 transition-colors"
-                  onClick={() => {
-                    document.getElementById('recipes-section')?.scrollIntoView({ behavior: 'smooth' });
-                  }}
-                >
-                  Explore Recipes
-                </Button>
-                <Button 
-                  variant="outline"
-                  className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-vegan-primary transition-colors"
-                  onClick={() => window.location.href = "/api/login"}
-                >
-                  Join Community
-                </Button>
-              </div>
             </div>
-            <div className="relative">
-              <img 
-                src="https://images.unsplash.com/photo-1512621776951-a57141f2eefd?ixlib=rb-4.0.3&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=800&h=600" 
-                alt="Colorful vegan dishes" 
-                className="rounded-2xl shadow-2xl w-full h-auto"
-              />
+            
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Button 
+                className="bg-white text-vegan-primary px-6 py-3 hover:bg-gray-100"
+                onClick={() => window.location.href = "/api/login"}
+              >
+                Join Community
+              </Button>
+              <Button 
+                variant="outline"
+                className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-vegan-primary"
+                onClick={() => {
+                  document.getElementById('recipes-section')?.scrollIntoView({ behavior: 'smooth' });
+                }}
+              >
+                Explore Recipes
+              </Button>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Popular Recipes Section */}
+      <section id="recipes-section" className="py-16 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Popular Recipes</h2>
+          </div>
+          
+          {recipesLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vegan-primary"></div>
+            </div>
+          ) : (
+            <Carousel className="w-full">
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {recipes.slice(0, 8).map((recipe, index) => (
+                  <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <RecipeCard recipe={recipe} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          )}
+        </div>
+      </section>
+
+      {/* Recent Recipes Section */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Recently Added</h2>
+          </div>
+          
+          {recentLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vegan-primary"></div>
+            </div>
+          ) : (
+            <Carousel className="w-full">
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {recentRecipes.slice(0, 8).map((recipe, index) => (
+                  <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <RecipeCard recipe={recipe} />
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          )}
+        </div>
+      </section>
+
+      {/* Popular Cuisines Section */}
+      <section className="py-16 bg-neutral-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-900">Popular Cuisines</h2>
+          </div>
+          
+          {cuisinesLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-vegan-primary"></div>
+            </div>
+          ) : (
+            <Carousel className="w-full">
+              <CarouselContent className="-ml-2 md:-ml-4">
+                {popularCuisines.map((cuisine, index) => (
+                  <CarouselItem key={cuisine.cuisine} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3 xl:basis-1/4">
+                    <Card className="h-32 cursor-pointer hover:shadow-lg transition-shadow">
+                      <CardContent className={`${getCuisineGradient(index)} h-full flex flex-col items-center justify-center text-white p-6 rounded-lg`}>
+                        <div className="text-3xl mb-2">{getCuisineEmoji(cuisine.cuisine)}</div>
+                        <h3 className="text-lg font-semibold text-center">{cuisine.cuisine}</h3>
+                        <p className="text-sm opacity-90">{cuisine.recipeCount} recipes</p>
+                      </CardContent>
+                    </Card>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <CarouselPrevious />
+              <CarouselNext />
+            </Carousel>
+          )}
         </div>
       </section>
 
@@ -148,64 +315,8 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-vegan-primary text-white mt-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <img src={logoPath} alt="Vegan Bites Club" className="h-6 brightness-0 invert" />
-              </div>
-              <p className="text-gray-300 text-sm">
-                A community-driven platform for sharing delicious vegan recipes and connecting plant-based food lovers worldwide.
-              </p>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Explore</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Browse Recipes</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Categories</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Popular Recipes</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">New Recipes</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Community</h3>
-              <ul className="space-y-2 text-sm">
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Join Us</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Share Recipe</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Guidelines</a></li>
-                <li><a href="#" className="text-gray-300 hover:text-white transition-colors">Help Center</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Connect</h3>
-              <div className="flex space-x-4 mb-4">
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  <i className="fab fa-facebook text-xl"></i>
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  <i className="fab fa-instagram text-xl"></i>
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  <i className="fab fa-twitter text-xl"></i>
-                </a>
-                <a href="#" className="text-gray-300 hover:text-white transition-colors">
-                  <i className="fab fa-pinterest text-xl"></i>
-                </a>
-              </div>
-              <p className="text-gray-300 text-sm">Follow us for daily recipe inspiration!</p>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-600 mt-8 pt-8 text-center text-sm text-gray-300">
-            <p>&copy; {new Date().getFullYear()} Vegan Bites Club. All rights reserved. | Privacy Policy | Terms of Service</p>
-          </div>
-        </div>
-      </footer>
+      
+      <Footer />
     </div>
   );
 }

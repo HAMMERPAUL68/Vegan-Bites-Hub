@@ -162,7 +162,7 @@ export default function Home() {
             <CarouselContent className="-ml-2 md:-ml-4">
               {popularRecipes.map((recipe: any) => (
                 <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
-                  <Link href={`/recipes/${recipe.id}`}>
+                  <Link href={`/recipe/${recipe.id}`}>
                     <div className="relative h-64 rounded-xl overflow-hidden group cursor-pointer">
                       {recipe.featuredImage ? (
                         <img

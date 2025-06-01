@@ -44,15 +44,7 @@ export default function AdminDashboard() {
     enabled: !!user && user.role === "admin",
   });
 
-  const { data: allRecipes = [], isLoading: allRecipesLoading } = useQuery({
-    queryKey: ["/api/recipes", "all"],
-    queryFn: async () => {
-      const response = await fetch("/api/recipes?isApproved=false");
-      if (!response.ok) throw new Error("Failed to fetch all recipes");
-      return response.json();
-    },
-    enabled: !!user && user.role === "admin",
-  });
+
 
   const approveMutation = useMutation({
     mutationFn: async (recipeId: number) => {
@@ -313,12 +305,11 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="pending" className="w-full">
-          <TabsList className="grid w-full max-w-lg grid-cols-3 mb-8">
+          <TabsList className="grid w-full max-w-lg grid-cols-2 mb-8">
             <TabsTrigger value="pending" className="flex items-center gap-2">
               <Clock className="w-4 h-4" />
               Pending ({pendingRecipes.length})
             </TabsTrigger>
-            <TabsTrigger value="all">All Recipes</TabsTrigger>
             <TabsTrigger value="import" className="flex items-center gap-2">
               <ChefHat className="w-4 h-4" />
               Import CSV
@@ -354,26 +345,6 @@ export default function AdminDashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="all" className="space-y-6">
-            {allRecipesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {[...Array(6)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="bg-gray-200 rounded-xl h-48 mb-4"></div>
-                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded w-2/3"></div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allRecipes.map((recipe: any) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} />
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="import" className="space-y-6">
             <Card className="max-w-2xl mx-auto">

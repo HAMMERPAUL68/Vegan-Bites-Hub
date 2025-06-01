@@ -135,8 +135,8 @@ export default function Landing() {
               </Button>
               <Button 
                 variant="outline"
-                className="border-2 border-white text-white bg-transparent px-6 py-3 hover:bg-white hover:text-vegan-primary font-medium"
-                onClick={() => window.location.href = "/create-recipe"}
+                className="border-2 border-white text-white bg-transparent px-6 py-3 hover:bg-white/20 hover:text-white font-medium transition-colors"
+                onClick={() => window.location.href = "/api/login"}
               >
                 Share Recipe
               </Button>

@@ -136,11 +136,9 @@ export default function Landing() {
               <Button 
                 variant="outline"
                 className="border-2 border-white text-white px-6 py-3 hover:bg-white hover:text-vegan-primary"
-                onClick={() => {
-                  document.getElementById('recipes-section')?.scrollIntoView({ behavior: 'smooth' });
-                }}
+                onClick={() => window.location.href = "/create-recipe"}
               >
-                Explore Recipes
+                Share Recipe
               </Button>
             </div>
           </div>
@@ -202,7 +200,7 @@ export default function Landing() {
       </section>
 
       {/* Popular Cuisines Section */}
-      <section className="py-16 bg-neutral-50">
+      <section id="cuisines-section" className="py-16 bg-neutral-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center mb-8">
             <h2 className="text-3xl font-bold text-gray-900">Popular Cuisines</h2>

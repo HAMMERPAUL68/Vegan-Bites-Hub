@@ -37,13 +37,13 @@ export default function Header() {
       <Link href="/" className="text-neutral-600 hover:text-vegan-primary transition-colors">
         Browse
       </Link>
-      <span className="text-neutral-600 hover:text-vegan-primary transition-colors cursor-pointer">
+      <Link href="/#cuisines-section" className="text-neutral-600 hover:text-vegan-primary transition-colors">
         Categories
-      </span>
+      </Link>
       {isAuthenticated && (
-        <span className="text-neutral-600 hover:text-vegan-primary transition-colors cursor-pointer">
+        <Link href="/profile" className="text-neutral-600 hover:text-vegan-primary transition-colors">
           My Recipes
-        </span>
+        </Link>
       )}
     </nav>
   );

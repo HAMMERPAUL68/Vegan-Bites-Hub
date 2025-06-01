@@ -114,27 +114,34 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Handle image uploads if files are present
       if (req.files && req.files.length > 0) {
+        console.log("Attempting to upload images...");
         try {
-          const uploadPromises = req.files.map(async (file: any) => {
-            const key = `recipes/${Date.now()}-${file.originalname}`;
-            
-            const uploadParams = {
-              Bucket: process.env.AWS_S3_BUCKET_NAME!,
-              Key: key,
-              Body: file.buffer,
-              ContentType: file.mimetype,
-            };
+          // Check if S3 configuration is valid
+          if (!process.env.AWS_S3_REGION || !process.env.AWS_S3_BUCKET_NAME) {
+            console.log("AWS S3 not configured, skipping image upload");
+          } else {
+            const uploadPromises = req.files.map(async (file: any) => {
+              const key = `recipes/${Date.now()}-${file.originalname}`;
+              
+              const uploadParams = {
+                Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                Key: key,
+                Body: file.buffer,
+                ContentType: file.mimetype,
+              };
 
-            await s3.send(new PutObjectCommand(uploadParams));
-            return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
-          });
+              await s3.send(new PutObjectCommand(uploadParams));
+              return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+            });
 
-          const imageUrls = await Promise.all(uploadPromises);
-          formData.featuredImage = imageUrls[0];
-          formData.images = imageUrls;
+            const imageUrls = await Promise.all(uploadPromises);
+            formData.featuredImage = imageUrls[0];
+            formData.images = imageUrls;
+            console.log("Images uploaded successfully:", imageUrls);
+          }
         } catch (uploadError) {
-          console.error("Image upload error:", uploadError);
-          // Continue without images for now
+          console.error("Image upload failed - continuing without images:", uploadError.message);
+          // Continue without images when S3 upload fails
         }
       }
 

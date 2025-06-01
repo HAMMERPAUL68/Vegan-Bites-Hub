@@ -219,12 +219,28 @@ export default function RecipeDetail() {
             <Card>
               <CardContent className="p-4">
                 <ul className="space-y-3">
-                  {recipe.ingredients?.split('\n').filter((line: string) => line.trim()).map((ingredient: string, index: number) => (
-                    <li key={index} className="flex items-start">
-                      <div className="w-4 h-4 border border-gray-300 rounded mr-3 mt-1 flex-shrink-0" />
-                      <span className="text-sm">{ingredient.trim()}</span>
-                    </li>
-                  ))}
+                  {(() => {
+                    // Handle both string (with line breaks) and array formats
+                    let ingredients: string[] = [];
+                    if (typeof recipe.ingredients === 'string') {
+                      try {
+                        // Try to parse as JSON array first
+                        ingredients = JSON.parse(recipe.ingredients);
+                      } catch {
+                        // Fallback to splitting on line breaks
+                        ingredients = recipe.ingredients.split('\n').filter((line: string) => line.trim());
+                      }
+                    } else if (Array.isArray(recipe.ingredients)) {
+                      ingredients = recipe.ingredients;
+                    }
+                    
+                    return ingredients.map((ingredient: string, index: number) => (
+                      <li key={index} className="flex items-start">
+                        <div className="w-4 h-4 border border-gray-300 rounded mr-3 mt-1 flex-shrink-0" />
+                        <span className="text-sm">{ingredient.trim()}</span>
+                      </li>
+                    ));
+                  })()}
                 </ul>
               </CardContent>
             </Card>
@@ -234,14 +250,30 @@ export default function RecipeDetail() {
           <div className="lg:col-span-2">
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Instructions</h2>
             <div className="space-y-4">
-              {recipe.instructions?.split('\n').filter((line: string) => line.trim()).map((instruction: string, index: number) => (
-                <div key={index} className="flex">
-                  <span className="flex-shrink-0 w-8 h-8 bg-vegan-primary text-white rounded-full flex items-center justify-center text-sm font-medium mr-4">
-                    {index + 1}
-                  </span>
-                  <p className="text-sm text-gray-700 pt-1">{instruction.trim()}</p>
-                </div>
-              ))}
+              {(() => {
+                // Handle both string (with line breaks) and array formats
+                let instructions: string[] = [];
+                if (typeof recipe.instructions === 'string') {
+                  try {
+                    // Try to parse as JSON array first
+                    instructions = JSON.parse(recipe.instructions);
+                  } catch {
+                    // Fallback to splitting on line breaks
+                    instructions = recipe.instructions.split('\n').filter((line: string) => line.trim());
+                  }
+                } else if (Array.isArray(recipe.instructions)) {
+                  instructions = recipe.instructions;
+                }
+                
+                return instructions.map((instruction: string, index: number) => (
+                  <div key={index} className="flex">
+                    <span className="flex-shrink-0 w-8 h-8 bg-vegan-primary text-white rounded-full flex items-center justify-center text-sm font-medium mr-4">
+                      {index + 1}
+                    </span>
+                    <p className="text-sm text-gray-700 pt-1">{instruction.trim()}</p>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>

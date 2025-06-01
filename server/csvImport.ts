@@ -87,6 +87,12 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
                 .filter(tag => tag.length > 0);
             }
 
+            // Debug logging for helpful notes and keywords
+            console.log(`Recipe: ${row['Recipe Title']}`);
+            console.log(`Helpful Notes raw:`, row['Helpful Notes']);
+            console.log(`Keywords raw:`, row.Keywords);
+            console.log(`Processed tags:`, tags);
+
             // Create recipe object
             const recipeData = {
               title: row['Recipe Title'].trim(),
@@ -99,6 +105,8 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               featuredImage: featuredImageUrl,
               isApproved: false, // Will need admin approval
             };
+
+            console.log(`Final helpfulNotes value:`, recipeData.helpfulNotes);
 
             // Create recipe in database
             const recipe = await storage.createRecipe(recipeData, authorId);

@@ -111,20 +111,40 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getPopularCuisines(): Promise<{ cuisine: string; recipeCount: number; featuredImage?: string }[]> {
-    // For now, return a curated list of popular cuisines that will be populated when CSV data is imported
-    // Since current recipes don't have cuisine data, we'll show the most common vegan cuisines
-    const popularCuisines = [
-      { cuisine: "Mediterranean", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Asian", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Mexican", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Indian", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Italian", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Middle Eastern", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "American", recipeCount: 0, featuredImage: undefined },
-      { cuisine: "Thai", recipeCount: 0, featuredImage: undefined }
-    ];
+    // Get actual cuisine data from the recipes table
+    // Since we store cuisine names in the cuisines table and reference them in recipes
+    const result = await db
+      .select({
+        cuisine: cuisines.name,
+        recipeCount: count(recipes.id),
+        featuredImage: sql<string>`(array_agg(${recipes.featuredImage}) filter (where ${recipes.featuredImage} is not null))[1]`
+      })
+      .from(cuisines)
+      .leftJoin(recipes, eq(cuisines.id, recipes.cuisineId))
+      .where(eq(recipes.isApproved, true))
+      .groupBy(cuisines.id, cuisines.name)
+      .orderBy(desc(count(recipes.id)))
+      .limit(8);
+
+    // If no cuisines are found in the database yet, return a default set
+    if (result.length === 0) {
+      return [
+        { cuisine: "Mediterranean", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Asian", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Mexican", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Indian", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Italian", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Middle Eastern", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "American", recipeCount: 0, featuredImage: undefined },
+        { cuisine: "Thai", recipeCount: 0, featuredImage: undefined }
+      ];
+    }
     
-    return popularCuisines;
+    return result.map(row => ({
+      cuisine: row.cuisine,
+      recipeCount: Number(row.recipeCount),
+      featuredImage: row.featuredImage || undefined
+    }));
   }
 
   // Recipe operations

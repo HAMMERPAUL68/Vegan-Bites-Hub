@@ -81,12 +81,11 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
             const recipeData = {
               title: row['Recipe Title'].trim(),
               description: row.Intro ? row.Intro.trim() : '',
-              ingredients: row.Ingredients.trim().split('\n').filter(Boolean),
-              instructions: row.Method.trim().split('\n').filter(Boolean),
-              difficulty: 'medium' as const,
+              ingredients: row.Ingredients.trim(),
+              instructions: row.Method.trim(),
+              helpfulNotes: row['Helpful Notes'] ? row['Helpful Notes'].trim() : '',
               cuisine: row.Country ? row.Country.trim() : '',
-              tags: [], // Can be derived from cuisine or other fields
-              notes: row['Helpful Notes'] ? row['Helpful Notes'].trim() : '',
+              tags: [],
               featuredImage: featuredImageUrl,
               isApproved: false, // Will need admin approval
             };

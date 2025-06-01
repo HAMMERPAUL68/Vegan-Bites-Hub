@@ -23,8 +23,20 @@ export interface IStorage {
   // User operations for independent authentication
   getUser(id: number): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
-  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  createUser(user: {
+    email: string;
+    password: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: string;
+  }): Promise<User>;
+  updateUser(id: number, user: Partial<{
+    email?: string;
+    password?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    role?: string;
+  }>): Promise<User | undefined>;
   setResetToken(email: string, token: string, expiry: Date): Promise<boolean>;
   getUserByResetToken(token: string): Promise<User | undefined>;
   clearResetToken(userId: number): Promise<boolean>;
@@ -64,25 +76,79 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
-  // User operations (mandatory for Replit Auth)
-  async getUser(id: string): Promise<User | undefined> {
+  // User operations for independent authentication
+  async getUser(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
+    return user;
+  }
+
+  async createUser(userData: {
+    email: string;
+    password: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    role: string;
+  }): Promise<User> {
     const [user] = await db
       .insert(users)
       .values(userData)
-      .onConflictDoUpdate({
-        target: users.id,
-        set: {
-          ...userData,
-          updatedAt: new Date(),
-        },
-      })
       .returning();
     return user;
+  }
+
+  async updateUser(id: number, userData: Partial<{
+    email?: string;
+    password?: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    role?: string;
+  }>): Promise<User | undefined> {
+    const [user] = await db
+      .update(users)
+      .set({ ...userData, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return user;
+  }
+
+  async setResetToken(email: string, token: string, expiry: Date): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ 
+        resetToken: token, 
+        resetTokenExpiry: expiry,
+        updatedAt: new Date()
+      })
+      .where(eq(users.email, email));
+    return (result.rowCount || 0) > 0;
+  }
+
+  async getUserByResetToken(token: string): Promise<User | undefined> {
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(and(
+        eq(users.resetToken, token),
+        sql`${users.resetTokenExpiry} > NOW()`
+      ));
+    return user;
+  }
+
+  async clearResetToken(userId: number): Promise<boolean> {
+    const result = await db
+      .update(users)
+      .set({ 
+        resetToken: null, 
+        resetTokenExpiry: null,
+        updatedAt: new Date()
+      })
+      .where(eq(users.id, userId));
+    return (result.rowCount || 0) > 0;
   }
 
   // Cuisine operations

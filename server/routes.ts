@@ -112,6 +112,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
         images: [] as string[],
       };
 
+      // Handle image uploads if files are present
+      if (req.files && req.files.length > 0) {
+        try {
+          const uploadPromises = req.files.map(async (file: any) => {
+            const key = `recipes/${Date.now()}-${file.originalname}`;
+            
+            const uploadParams = {
+              Bucket: process.env.AWS_S3_BUCKET_NAME!,
+              Key: key,
+              Body: file.buffer,
+              ContentType: file.mimetype,
+            };
+
+            await s3.send(new PutObjectCommand(uploadParams));
+            return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+          });
+
+          const imageUrls = await Promise.all(uploadPromises);
+          formData.featuredImage = imageUrls[0];
+          formData.images = imageUrls;
+        } catch (uploadError) {
+          console.error("Image upload error:", uploadError);
+          // Continue without images for now
+        }
+      }
+
       console.log("Parsed form data:", formData);
 
       const recipeData = insertRecipeSchema.parse(formData);

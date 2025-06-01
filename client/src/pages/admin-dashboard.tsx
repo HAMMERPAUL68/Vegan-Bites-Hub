@@ -221,16 +221,6 @@ export default function AdminDashboard() {
         <p className="text-sm text-gray-600 mb-3 line-clamp-2">{recipe.description}</p>
         
         <div className="flex items-center justify-between mb-3 text-sm text-gray-600">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              <span>{recipe.prepTime + recipe.cookTime}m</span>
-            </div>
-            <div className="flex items-center">
-              <Users className="w-4 h-4 mr-1" />
-              <span>{recipe.servings}</span>
-            </div>
-          </div>
           <div className="flex items-center">
             <span className="text-yellow-400">★</span>
             <span className="ml-1">{recipe.avgRating.toFixed(1)} ({recipe.reviewCount})</span>

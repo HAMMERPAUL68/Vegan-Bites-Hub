@@ -11,17 +11,24 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Heart, Plus, User, Settings } from "lucide-react";
 import { Link } from "wouter";
 import heroImage from "@assets/Vegan-Bites-Hub-Website-Images-1920-x-1080-px.jpg";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
 
 export default function Home() {
   const { user, isLoading } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("browse");
 
-  const { data: recipes = [], isLoading: recipesLoading, refetch: refetchRecipes } = useQuery({
-    queryKey: ["/api/recipes"],
+  const { data: popularRecipes = [], isLoading: popularRecipesLoading } = useQuery({
+    queryKey: ["/api/recipes", "popular"],
     queryFn: async () => {
-      const response = await fetch("/api/recipes?isApproved=true");
-      if (!response.ok) throw new Error("Failed to fetch recipes");
+      const response = await fetch("/api/recipes?isApproved=true&sortBy=newest&limit=10");
+      if (!response.ok) throw new Error("Failed to fetch popular recipes");
       return response.json();
     },
   });
@@ -120,11 +127,87 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Popular Recipes Section */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="mb-8">
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Popular Recipes</h2>
+          <p className="text-gray-600">Discover the most loved recipes from our community</p>
+        </div>
+
+        {popularRecipesLoading ? (
+          <div className="flex gap-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="flex-1 animate-pulse">
+                <div className="bg-gray-200 rounded-xl h-64 mb-4"></div>
+                <div className="bg-gray-200 h-6 rounded mb-2"></div>
+                <div className="bg-gray-200 h-4 rounded w-2/3"></div>
+              </div>
+            ))}
+          </div>
+        ) : popularRecipes.length === 0 ? (
+          <Card className="p-8 text-center">
+            <CardContent>
+              <h3 className="text-lg font-semibold mb-2">No recipes available yet</h3>
+              <p className="text-gray-600">Check back soon for amazing vegan recipes!</p>
+            </CardContent>
+          </Card>
+        ) : (
+          <Carousel
+            opts={{
+              align: "start",
+              loop: true,
+            }}
+            className="w-full"
+          >
+            <CarouselContent className="-ml-2 md:-ml-4">
+              {popularRecipes.map((recipe: any) => (
+                <CarouselItem key={recipe.id} className="pl-2 md:pl-4 md:basis-1/2 lg:basis-1/3">
+                  <Link href={`/recipes/${recipe.id}`}>
+                    <div className="relative h-64 rounded-xl overflow-hidden group cursor-pointer">
+                      {recipe.featuredImage ? (
+                        <img
+                          src={recipe.featuredImage}
+                          alt={recipe.title}
+                          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-vegan-primary to-vegan-secondary flex items-center justify-center">
+                          <div className="text-white text-6xl">🥗</div>
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
+                      <div className="absolute bottom-0 left-0 right-0 p-6">
+                        <h3 className="text-white text-xl font-bold mb-2 line-clamp-2">
+                          {recipe.title}
+                        </h3>
+                        <div className="flex items-center gap-2 text-white/80 text-sm">
+                          <span>by {recipe.author.firstName || recipe.author.email}</span>
+                          {recipe.avgRating > 0 && (
+                            <>
+                              <span>•</span>
+                              <div className="flex items-center gap-1">
+                                <span>⭐</span>
+                                <span>{recipe.avgRating.toFixed(1)}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            <CarouselPrevious className="left-2" />
+            <CarouselNext className="right-2" />
+          </Carousel>
+        )}
+      </section>
+
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full max-w-md grid-cols-3 mb-8">
-            <TabsTrigger value="browse">Browse</TabsTrigger>
+          <TabsList className="grid w-full max-w-md grid-cols-2 mb-8">
             <TabsTrigger value="favorites">
               <Heart className="w-4 h-4 mr-2" />
               Favorites
@@ -133,36 +216,6 @@ export default function Home() {
               <TabsTrigger value="my-recipes">My Recipes</TabsTrigger>
             )}
           </TabsList>
-
-          <TabsContent value="browse" className="space-y-6">
-            <RecipeFilters onFilterChange={() => refetchRecipes()} />
-            
-            {recipesLoading ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {[...Array(8)].map((_, i) => (
-                  <div key={i} className="animate-pulse">
-                    <div className="bg-gray-200 rounded-xl h-48 mb-4"></div>
-                    <div className="bg-gray-200 h-4 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded mb-2"></div>
-                    <div className="bg-gray-200 h-3 rounded w-2/3"></div>
-                  </div>
-                ))}
-              </div>
-            ) : recipes.length === 0 ? (
-              <Card className="p-8 text-center">
-                <CardContent>
-                  <h3 className="text-lg font-semibold mb-2">No recipes found</h3>
-                  <p className="text-gray-600">Try adjusting your filters or check back later for new recipes.</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {recipes.map((recipe: any) => (
-                  <RecipeCard key={recipe.id} recipe={recipe} showFavorite />
-                ))}
-              </div>
-            )}
-          </TabsContent>
 
           <TabsContent value="favorites" className="space-y-6">
             {favoritesLoading ? (
@@ -182,9 +235,6 @@ export default function Home() {
                   <Heart className="w-16 h-16 mx-auto text-gray-300 mb-4" />
                   <h3 className="text-lg font-semibold mb-2">No favorite recipes yet</h3>
                   <p className="text-gray-600 mb-4">Start exploring and save recipes you love!</p>
-                  <Button onClick={() => setActiveTab("browse")} className="bg-vegan-primary text-white">
-                    Browse Recipes
-                  </Button>
                 </CardContent>
               </Card>
             ) : (

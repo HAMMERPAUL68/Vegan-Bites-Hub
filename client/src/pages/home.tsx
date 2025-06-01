@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import RecipeFilters from "@/components/RecipeFilters";
 import RecipeCard from "@/components/RecipeCard";
 import { useQuery } from "@tanstack/react-query";
@@ -476,6 +477,7 @@ export default function Home() {
           )}
         </Tabs>
       </div>
+      <Footer />
     </div>
   );
 }

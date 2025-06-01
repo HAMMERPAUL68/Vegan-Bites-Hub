@@ -129,14 +129,14 @@ export default function Landing() {
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 className="bg-white text-vegan-primary px-6 py-3 hover:bg-gray-100"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth"}
               >
                 Join Community
               </Button>
               <Button 
                 variant="outline"
                 className="border-2 border-white text-white bg-transparent px-6 py-3 hover:bg-white/20 hover:text-white font-medium transition-colors"
-                onClick={() => window.location.href = "/api/login"}
+                onClick={() => window.location.href = "/auth"}
               >
                 Share Recipe
               </Button>

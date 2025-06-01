@@ -20,9 +20,14 @@ import { eq, desc, asc, ilike, and, sql, avg, count, isNotNull, ne } from "drizz
 
 // Interface for storage operations
 export interface IStorage {
-  // User operations (mandatory for Replit Auth)
-  getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  // User operations for independent authentication
+  getUser(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, user: Partial<InsertUser>): Promise<User | undefined>;
+  setResetToken(email: string, token: string, expiry: Date): Promise<boolean>;
+  getUserByResetToken(token: string): Promise<User | undefined>;
+  clearResetToken(userId: number): Promise<boolean>;
   
   // Cuisine operations
   getCuisines(): Promise<Cuisine[]>;

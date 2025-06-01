@@ -88,10 +88,17 @@ export default function CreateRecipe() {
 
   const createRecipeMutation = useMutation({
     mutationFn: async (data: FormData) => {
-      return await apiRequest("/api/recipes", {
+      const res = await fetch("/api/recipes", {
         method: "POST",
         body: data,
+        credentials: "include",
       });
+      
+      if (!res.ok) {
+        throw new Error(`${res.status}: ${res.statusText}`);
+      }
+      
+      return res;
     },
     onSuccess: () => {
       toast({
@@ -299,17 +306,13 @@ export default function CreateRecipe() {
               <div>
                 <Label className="text-lg font-semibold">Tags</Label>
                 <div className="space-y-3 mt-3">
-                  <div className="flex gap-2">
+                  <div>
                     <Input
                       value={newTag}
                       onChange={(e) => handleTagInput(e.target.value)}
                       placeholder="Add tags (separate with commas or press Enter)"
                       onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
-                      className="flex-1"
                     />
-                    <Button type="button" onClick={() => addTag()} variant="outline">
-                      <Plus className="w-4 h-4" />
-                    </Button>
                   </div>
                   {formData.tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">

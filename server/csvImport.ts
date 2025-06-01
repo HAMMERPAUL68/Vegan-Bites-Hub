@@ -21,6 +21,7 @@ interface CSVRecipe {
   Method: string; // Instructions
   'Helpful Notes': string;
   'Image url': string; // Featured image URL
+  Keywords: string; // Tags from column J
 }
 
 // Function to validate and use existing S3 URL
@@ -77,6 +78,15 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               featuredImageUrl = await validateS3ImageUrl(row['Image url'].trim());
             }
 
+            // Process tags from Keywords column
+            let tags: string[] = [];
+            if (row.Keywords && row.Keywords.trim()) {
+              tags = row.Keywords.trim()
+                .split(',')
+                .map(tag => tag.trim())
+                .filter(tag => tag.length > 0);
+            }
+
             // Create recipe object
             const recipeData = {
               title: row['Recipe Title'].trim(),
@@ -85,7 +95,7 @@ export async function importRecipesFromCSV(csvData: string, authorId: string): P
               instructions: row.Method.trim(),
               helpfulNotes: row['Helpful Notes'] ? row['Helpful Notes'].trim() : '',
               cuisine: row.Country ? row.Country.trim() : '',
-              tags: [],
+              tags: tags,
               featuredImage: featuredImageUrl,
               isApproved: false, // Will need admin approval
             };

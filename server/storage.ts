@@ -26,6 +26,7 @@ export interface IStorage {
   
   // Cuisine operations
   getCuisines(): Promise<Cuisine[]>;
+  getPopularCuisines(): Promise<{ cuisine: string; recipeCount: number; featuredImage?: string }[]>;
   createCuisine(cuisine: InsertCuisine): Promise<Cuisine>;
   updateCuisine(id: number, cuisine: Partial<InsertCuisine>): Promise<Cuisine | undefined>;
   deleteCuisine(id: number): Promise<boolean>;
@@ -107,6 +108,23 @@ export class DatabaseStorage implements IStorage {
       .set({ isActive: false })
       .where(eq(cuisines.id, id));
     return (result.rowCount ?? 0) > 0;
+  }
+
+  async getPopularCuisines(): Promise<{ cuisine: string; recipeCount: number; featuredImage?: string }[]> {
+    // Since we're storing cuisine as a string in the recipes table, we'll get the most common cuisines
+    const result = await db
+      .select({
+        cuisine: sql<string>`${recipes.cuisine}`,
+        recipeCount: sql<number>`count(*)::int`,
+        featuredImage: sql<string>`(array_agg(${recipes.featuredImage}) filter (where ${recipes.featuredImage} is not null))[1]`
+      })
+      .from(recipes)
+      .where(and(eq(recipes.isApproved, true), isNotNull(sql`${recipes.cuisine}`), ne(sql`${recipes.cuisine}`, '')))
+      .groupBy(sql`${recipes.cuisine}`)
+      .orderBy(sql`count(*) desc`)
+      .limit(10);
+
+    return result.filter(item => item.cuisine);
   }
 
   // Recipe operations

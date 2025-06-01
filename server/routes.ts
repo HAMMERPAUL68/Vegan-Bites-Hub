@@ -153,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("AWS S3 not configured, skipping image upload");
           } else {
             const uploadPromises = req.files.map(async (file: any) => {
-              const key = `recipes/${Date.now()}-${file.originalname}`;
+              const key = `User images/${Date.now()}-${file.originalname}`;
               
               const uploadParams = {
                 Bucket: process.env.AWS_S3_BUCKET_NAME!.trim(),

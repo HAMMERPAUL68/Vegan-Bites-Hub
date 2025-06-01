@@ -6,16 +6,27 @@ import { importRecipesFromCSV } from "./csvImport";
 import multer from "multer";
 import { insertRecipeSchema, insertReviewSchema, insertFavoriteSchema } from "@shared/schema";
 import { z } from "zod";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, ListObjectsV2Command } from "@aws-sdk/client-s3";
 
-// Configure AWS S3
-const s3 = new S3Client({
-  region: process.env.AWS_S3_REGION,
+// Configure AWS S3 with explicit configuration
+const s3Config = {
+  region: process.env.AWS_S3_REGION?.trim() || 'eu-north-1',
   credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID!.trim(),
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!.trim(),
   },
+  forcePathStyle: false,
+  maxAttempts: 3,
+};
+
+console.log("S3 Configuration:", {
+  region: s3Config.region,
+  bucket: process.env.AWS_S3_BUCKET_NAME?.trim(),
+  hasAccessKey: !!s3Config.credentials.accessKeyId,
+  hasSecretKey: !!s3Config.credentials.secretAccessKey
 });
+
+const s3 = new S3Client(s3Config);
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up multer for file uploads
@@ -26,6 +37,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Auth middleware
   await setupAuth(app);
+
+  // Test S3 connection endpoint
+  app.get('/api/test-s3', async (req, res) => {
+    try {
+      console.log("Testing S3 configuration...");
+      console.log("Region:", process.env.AWS_S3_REGION);
+      console.log("Bucket:", process.env.AWS_S3_BUCKET_NAME);
+      
+      // Test S3 connection by listing bucket contents
+      const command = new ListObjectsV2Command({
+        Bucket: process.env.AWS_S3_BUCKET_NAME?.trim(),
+        MaxKeys: 1
+      });
+      
+      await s3.send(command);
+      res.json({ status: "S3 connection successful", region: process.env.AWS_S3_REGION, bucket: process.env.AWS_S3_BUCKET_NAME });
+    } catch (error: any) {
+      console.error("S3 test failed:", error);
+      res.status(500).json({ status: "S3 connection failed", error: error.message });
+    }
+  });
 
   // Auth routes
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
@@ -124,14 +156,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
               const key = `recipes/${Date.now()}-${file.originalname}`;
               
               const uploadParams = {
-                Bucket: process.env.AWS_S3_BUCKET_NAME!,
+                Bucket: process.env.AWS_S3_BUCKET_NAME!.trim(),
                 Key: key,
                 Body: file.buffer,
                 ContentType: file.mimetype,
               };
 
               await s3.send(new PutObjectCommand(uploadParams));
-              return `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_S3_REGION}.amazonaws.com/${key}`;
+              return `https://${process.env.AWS_S3_BUCKET_NAME!.trim()}.s3.${process.env.AWS_S3_REGION!.trim()}.amazonaws.com/${key}`;
             });
 
             const imageUrls = await Promise.all(uploadPromises);
@@ -140,7 +172,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             console.log("Images uploaded successfully:", imageUrls);
           }
         } catch (uploadError) {
-          console.error("Image upload failed - continuing without images:", uploadError.message);
+          console.error("Image upload failed - continuing without images:", uploadError);
           // Continue without images when S3 upload fails
         }
       }

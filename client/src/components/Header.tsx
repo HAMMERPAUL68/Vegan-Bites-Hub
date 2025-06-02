@@ -28,18 +28,57 @@ export default function Header() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      setLocation(`/?search=${encodeURIComponent(searchQuery.trim())}`);
+      setLocation(`/browse?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
 
+  // Fetch cuisines for categories dropdown
+  const { data: cuisines = [] } = useQuery({
+    queryKey: ["/api/cuisines"],
+    queryFn: async () => {
+      const response = await fetch("/api/cuisines");
+      if (!response.ok) throw new Error("Failed to fetch cuisines");
+      return response.json();
+    },
+  });
+
   const Navigation = ({ mobile = false }) => (
     <nav className={`${mobile ? "flex flex-col space-y-4" : "hidden md:flex items-center space-x-6"}`}>
-      <Link href="/" className="text-neutral-600 hover:text-vegan-primary transition-colors">
+      <Link href="/browse" className="text-neutral-600 hover:text-vegan-primary transition-colors">
         Browse
       </Link>
-      <Link href="/#cuisines-section" className="text-neutral-600 hover:text-vegan-primary transition-colors">
-        Categories
-      </Link>
+      
+      {mobile ? (
+        <div className="flex flex-col space-y-2">
+          <span className="text-neutral-600 font-medium">Categories</span>
+          {cuisines.slice(0, 8).map((cuisine: any) => (
+            <Link 
+              key={cuisine.id} 
+              href={`/browse?cuisine=${encodeURIComponent(cuisine.name)}`}
+              className="text-neutral-500 hover:text-vegan-primary transition-colors pl-4"
+            >
+              {cuisine.name}
+            </Link>
+          ))}
+        </div>
+      ) : (
+        <DropdownMenu>
+          <DropdownMenuTrigger className="text-neutral-600 hover:text-vegan-primary transition-colors">
+            Categories
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="w-48">
+            {cuisines.map((cuisine: any) => (
+              <DropdownMenuItem 
+                key={cuisine.id}
+                onClick={() => setLocation(`/browse?cuisine=${encodeURIComponent(cuisine.name)}`)}
+              >
+                {cuisine.name}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      
       {isAuthenticated && (
         <Link href="/profile" className="text-neutral-600 hover:text-vegan-primary transition-colors">
           My Recipes

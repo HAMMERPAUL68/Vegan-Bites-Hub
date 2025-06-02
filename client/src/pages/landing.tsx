@@ -29,6 +29,15 @@ export default function Landing() {
     tags: [] as string[],
   });
 
+  // Handle search parameter from URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const searchParam = urlParams.get('search');
+    if (searchParam) {
+      setActiveFilters(prev => ({ ...prev, search: searchParam }));
+    }
+  }, []);
+
   // Helper functions for cuisine display
   const getCuisineEmoji = (cuisine: string) => {
     const emojiMap: { [key: string]: string } = {

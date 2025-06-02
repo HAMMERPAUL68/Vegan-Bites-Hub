@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import Landing from "@/pages/landing";
 import Home from "@/pages/home";
 import AuthPage from "@/pages/auth";
+import Browse from "@/pages/browse";
 import RecipeDetail from "@/pages/recipe-detail";
 import CreateRecipe from "@/pages/create-recipe";
 import AdminDashboard from "@/pages/admin-dashboard";
@@ -21,12 +22,14 @@ function Router() {
       {isLoading || !isAuthenticated ? (
         <>
           <Route path="/" component={Landing} />
+          <Route path="/browse" component={Browse} />
           <Route path="/auth" component={AuthPage} />
           <Route path="/recipe/:id" component={RecipeDetail} />
         </>
       ) : (
         <>
           <Route path="/" component={Home} />
+          <Route path="/browse" component={Browse} />
           <Route path="/recipe/:id" component={RecipeDetail} />
           <Route path="/create-recipe" component={CreateRecipe} />
           <Route path="/admin" component={AdminDashboard} />
